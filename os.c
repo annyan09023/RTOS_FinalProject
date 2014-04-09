@@ -144,8 +144,10 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	TCBS[thread_num].priority = priority;
 	TCBS[thread_num].sleep = 0;//Initialization
 	TCBS[thread_num].status = ACTIVE;
+	//Modified by annyan for priority donation
 	TCBS[thread_num].priority_temp=INVALID_PRIORITY;
 	TCBS[thread_num].is_donated=0;
+	//End of modification
 	Stack[thread_num][STACKSIZE-2] = (long)task; //PC
 	++thread_num;
 //	++thread_pt;
@@ -347,11 +349,10 @@ void PortF4_Init(void){
 }
 
 void PortF0_Init(void){ 
-   unsigned delay;                             // (a) activate clock for port F
-  SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF;
-	 delay = SYSCTL_RCGC0_R;         // 8) allow time for clock to stabilize
 
-  delay = SYSCTL_RCGC0_R;         // 8) allow time for clock to stabilize
+  SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF;
+
+
   GPIO_PORTF_LOCK_R
 = 0x4C4F434B; // unlock GPIO Port F 
 	GPIO_PORTF_CR_R
@@ -414,11 +415,39 @@ void OS_bSignal(Sema4Type *semaPt){
 			struct Blocked_list_elem * cur = semaPt->first;
 			cur = cur->Next;
 			semaPt->first->Bloker->status = ACTIVE;
+			/***************priority donation, modified by annyan***********/
+			if(semaPt->holder->is_donated){
+				if(semaPt->holder->priority < semaPt->first->Bloker->priority){
+					if(semaPt->first->Bloker->is_donated)
+						semaPt->first->Bloker->priority = semaPt->holder->priority;
+					else{
+						semaPt->first->Bloker->is_donated=1;
+						semaPt->first->Bloker->priority_temp=semaPt->first->Bloker->priority;
+						semaPt->first->Bloker->priority = semaPt->holder->priority;
+					}
+				}
+				semaPt->holder->is_donated = 0;
+				semaPt->holder->priority = semaPt->holder->priority_temp;
+				semaPt->holder->priority_temp = INVALID_PRIORITY;
+			}
+			semaPt->holder=semaPt->first->Bloker;
+			//end of modification
 			free (semaPt->first);
 			semaPt->first = cur;
 		}
 	}
 	//using round robin, do not suspend execution
+	else{
+			/***************priority donation, modified by annyan***********/
+			if(semaPt->holder->is_donated){
+				semaPt->holder->is_donated = 0;
+				semaPt->holder->priority = semaPt->holder->priority_temp;
+				semaPt->holder->priority_temp = INVALID_PRIORITY;
+			}
+			semaPt->holder = NULL;
+			//end of modification
+		
+	}
 	EndCritical (status);
 }
 
@@ -427,17 +456,27 @@ void OS_bWait(Sema4Type *semaPt){
 	status = StartCritical ();
 	
 	semaPt->Value--;//Decrement the semaphore counter
-	//UART_OutChar(semaPt->Value+'0');
+
 	if (semaPt->Value < 0){
-		//UART_OutChar('s');
-		//EnableInterrupts();
-		//DisableInterrupts();
+
 		if (semaPt->first == NULL){
-			//UART_OutChar('t');
+
 			semaPt->first = (struct Blocked_list_elem *)malloc (sizeof(struct Blocked_list_elem));
 			semaPt->first->Bloker = RunPt;
 			RunPt->status = BLOCKED;
 			semaPt->first->Next = NULL;
+			/***********priority donation modified by annyan*****************/
+			if(RunPt->priority < semaPt->holder->priority){
+				if(semaPt->holder->is_donated)
+					semaPt->holder->priority=RunPt->priority;
+				else{
+					semaPt->holder->is_donated=1;
+					semaPt->holder->priority_temp=semaPt->holder->priority;
+					semaPt->holder->priority=RunPt->priority;
+				}
+			}
+			//end of modification
+			
 		}
 		else{
 			struct Blocked_list_elem * cur = semaPt->first;
@@ -448,12 +487,25 @@ void OS_bWait(Sema4Type *semaPt){
 		cur->Next->Bloker = RunPt;
 		RunPt->status = BLOCKED;
 		cur->Next->Next = NULL;
+				/***********priority donation modified by annyan*****************/
+		if(RunPt->priority < semaPt->holder->priority){
+			if(semaPt->holder->is_donated)
+				semaPt->holder->priority=RunPt->priority;
+			else{
+				semaPt->holder->is_donated=1;
+				semaPt->holder->priority_temp=semaPt->holder->priority;
+				semaPt->holder->priority=RunPt->priority;
+			}
+		}
+		//end of modification
 	
 		}
 
 		EndCritical (status);
 		OS_Suspend();
 	}
+	else
+		semaPt->holder = RunPt;//for priority donation, modified by annyan
 	
 	EndCritical (status);
 }
@@ -467,10 +519,39 @@ void OS_Signal(Sema4Type *semaPt){
 			struct Blocked_list_elem * cur = semaPt->first;
 			cur = cur->Next;
 			semaPt->first->Bloker->status = ACTIVE;
+			/***************priority donation, modified by annyan***********/
+			if(semaPt->holder->is_donated){
+				if(semaPt->holder->priority < semaPt->first->Bloker->priority){
+					if(semaPt->first->Bloker->is_donated)
+						semaPt->first->Bloker->priority = semaPt->holder->priority;
+					else{
+						semaPt->first->Bloker->is_donated=1;
+						semaPt->first->Bloker->priority_temp=semaPt->first->Bloker->priority;
+						semaPt->first->Bloker->priority = semaPt->holder->priority;
+					}
+				}
+				semaPt->holder->is_donated = 0;
+				semaPt->holder->priority = semaPt->holder->priority_temp;
+				semaPt->holder->priority_temp = INVALID_PRIORITY;
+			}
+			semaPt->holder=semaPt->first->Bloker;
+			//end of modification
 			free (semaPt->first);
 			semaPt->first = cur;
 		}
 	}
+	else{
+			/***************priority donation, modified by annyan***********/
+			if(semaPt->holder->is_donated){
+				semaPt->holder->is_donated = 0;
+				semaPt->holder->priority = semaPt->holder->priority_temp;
+				semaPt->holder->priority_temp = INVALID_PRIORITY;
+			}
+			semaPt->holder = NULL;
+			//end of modification
+		
+	}
+	
 	//using round robin, do not suspend execution
 	EndCritical (status);
 }
@@ -480,13 +561,23 @@ void OS_Wait(Sema4Type *semaPt){
 	status = StartCritical();
 	semaPt->Value--;//Decrement the semaphore counter
 	if (semaPt->Value < 0){
-		//EnableInterrupts();
-		//DisableInterrupts();
+	
 		if (semaPt->first == NULL){
 			semaPt->first = (struct Blocked_list_elem *)malloc (sizeof(struct Blocked_list_elem));
 			semaPt->first->Bloker = RunPt;
 			semaPt->first->Bloker->status = BLOCKED;
 			semaPt->first->Next = NULL;
+			/***********priority donation modified by annyan*****************/
+			if(RunPt->priority < semaPt->holder->priority){
+				if(semaPt->holder->is_donated)
+					semaPt->holder->priority=RunPt->priority;
+				else{
+					semaPt->holder->is_donated=1;
+					semaPt->holder->priority_temp=semaPt->holder->priority;
+					semaPt->holder->priority=RunPt->priority;
+				}
+			}
+			//end of modification
 		}
 		else{
 			struct Blocked_list_elem * cur = semaPt->first;
@@ -497,11 +588,24 @@ void OS_Wait(Sema4Type *semaPt){
 			cur->Next->Bloker = RunPt;
 			cur->Next->Bloker->status = BLOCKED;
 			cur->Next->Next = NULL;
+			/***********priority donation modified by annyan*****************/
+			if(RunPt->priority < semaPt->holder->priority){
+				if(semaPt->holder->is_donated)
+					semaPt->holder->priority=RunPt->priority;
+				else{
+					semaPt->holder->is_donated=1;
+					semaPt->holder->priority_temp=semaPt->holder->priority;
+					semaPt->holder->priority=RunPt->priority;
+				}
+			}
+			//end of modification
 		}
 
 		EndCritical(status);
 		OS_Suspend();
 	}
+	else
+		semaPt->holder = RunPt;//for priority donation, modified by annyan
 	
 	EndCritical(status);
 }
@@ -509,6 +613,7 @@ void OS_InitSemaphore(Sema4Type *semaPt, long value){
   semaPt->Value = value;
 
 	semaPt->first = NULL; //initialize blocked_list
+	semaPt->holder = NULL;
 	return;
 }
 //End of Modification
