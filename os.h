@@ -24,6 +24,8 @@ struct  Sema4{
 // add other components here, if necessary to implement blocking
 	struct Blocked_list_elem *first;
 	struct TCB* holder; /****for priority donation*********annyan*/
+	unsigned long holding_time;/********for timeout semaphore********annyan***/
+	struct Sema4* bloked_next;/**********for timeout semaphore********annyan***/
 };
 struct TCB{
 	long *sp;     /* Stack Pointer */
@@ -34,6 +36,7 @@ struct TCB{
 	char is_donated;         /****for priority donation*********annyan*/
 	unsigned long sleep;  /* Sleep state (used to suspend execution) */
 	unsigned short status;
+	struct Sema4* sema4_blocked;
 };
 typedef struct TCB TCB_Type;
 

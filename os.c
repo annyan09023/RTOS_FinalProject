@@ -35,6 +35,7 @@ void PendSV(void);
 #define ACTIVE 0x09dd
 #define BLOCKED 0xff12
 #define INVALID_PRIORITY 18
+#define TIME_OUT 100 //after 100us, thread will release semaphore
 
 TCB_Type TCBS [THREADS_NUM];
 TCB_Type *RunPt;
@@ -127,6 +128,9 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 		DeadPt->is_donated=0;
 		DeadPt->priority_temp=INVALID_PRIORITY;
 		//End of modification
+		//Modified by annyan for Time out semaphore
+		DeadPt->sema4_blocked = NULL;
+		//End of modification
 		Stack[DeadPt->Id - 1][STACKSIZE-2] = (long)task;
 		DeadPt = NULL;
 
@@ -147,6 +151,9 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	//Modified by annyan for priority donation
 	TCBS[thread_num].priority_temp=INVALID_PRIORITY;
 	TCBS[thread_num].is_donated=0;
+	//End of modification
+	//Modified by annyan for Time out semaphore
+	TCBS[thread_num].sema4_blocked = NULL;
 	//End of modification
 	Stack[thread_num][STACKSIZE-2] = (long)task; //PC
 	++thread_num;
@@ -600,13 +607,24 @@ void OS_Wait(Sema4Type *semaPt){
 			}
 			//end of modification
 		}
-
+		if(RunPt->sema4_blocked == NULL){
+			RunPt ->sema4_blocked = semaPt;
+			semaPt->bloked_next = NULL;
+		}
+		else{
+			struct Sema4* pt = RunPt->sema4_blocked;
+			while (pt->bloked_next != NULL)
+				pt = pt->bloked_next;
+			pt->bloked_next = RunPt->sema4_blocked;
+			semaPt->bloked_next = NULL;
+		}
 		EndCritical(status);
 		OS_Suspend();
 	}
-	else
+	else{
 		semaPt->holder = RunPt;//for priority donation, modified by annyan
-	
+		semaPt->holding_time = OS_MsTime();
+	}
 	EndCritical(status);
 }
 void OS_InitSemaphore(Sema4Type *semaPt, long value){
@@ -614,6 +632,8 @@ void OS_InitSemaphore(Sema4Type *semaPt, long value){
 
 	semaPt->first = NULL; //initialize blocked_list
 	semaPt->holder = NULL;
+	semaPt->holding_time = 0;
+	semaPt->bloked_next = NULL;
 	return;
 }
 //End of Modification
@@ -707,9 +727,20 @@ void SysTick_Handler (void){
 	unsigned int priority = 7;//initialized as the lowest one
 	
 	TCB_Type *pt;
+	struct Sema4 * sema_pt;
 	//PIND0 = ~PIND0;
 	//PIND0 = ~PIND0;
 	//status = StartCritical();
+	/******************for timeout semaphore***************************/
+	if(RunPt->status == BLOCKED){
+		sema_pt = RunPt->sema4_blocked;
+		while(!sema_pt){
+			if(OS_Time - sema_pt->holding_time > TIME_OUT)
+				OS_Signal(sema_pt);
+			sema_pt = sema_pt->bloked_next;
+		}
+	}
+	/***************************end of timeout semaphore******************/
 	if ((RunPt->sleep == 0) && (RunPt->status == ACTIVE))
 		priority = RunPt -> priority;
 	pt = RunPt->Next;
