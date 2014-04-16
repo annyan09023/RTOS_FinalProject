@@ -1,6 +1,7 @@
 //Modified by Annyan and Zirui
 #include "PLL.h"
 #include "os.h"
+#include "bank.h"
 #include "UART2.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -119,6 +120,8 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	/*if (thread_num-count_die >=10||((count_num >=10) &&(!DeadPt))){
 		EndCritical(status);
 		return 0;}*/
+		
+		/**************comment for bank debug*************
 	if (DeadPt){
 		SetInitialStack (DeadPt->Id-1);
 		DeadPt->priority = priority;
@@ -137,7 +140,9 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 		//++count_alive;
 		EndCritical(status);
 		return 1;
-	}
+	}********************************************************/
+	
+	
 	SetInitialStack (thread_num);
 	
 	if(thread_num){
@@ -156,6 +161,10 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	TCBS[thread_num].sema4_blocked = NULL;
 	//End of modification
 	Stack[thread_num][STACKSIZE-2] = (long)task; //PC
+	
+	/**********************bank******************************/
+	bank_init_tcb(&TCBS[thread_num], thread_num);
+	/*********************************************************/
 	++thread_num;
 //	++thread_pt;
 	++count_num;
@@ -628,12 +637,16 @@ void OS_Wait(Sema4Type *semaPt){
 	EndCritical(status);
 }
 void OS_InitSemaphore(Sema4Type *semaPt, long value){
+	static int i=0;
   semaPt->Value = value;
 
 	semaPt->first = NULL; //initialize blocked_list
 	semaPt->holder = NULL;
 	semaPt->holding_time = 0;
 	semaPt->bloked_next = NULL;
+	/***********************bank debug***********************/
+	bank_init_semaphore (semaPt, i++);
+	
 	return;
 }
 //End of Modification
@@ -667,33 +680,11 @@ void GPIOPortF_Handler(void){
 	if ((GPIO_PORTF_RIS_R&1)&&(GPIO_PORTF_MIS_R&1)){
 		GPIO_PORTF_ICR_R |=0x1; //clear flag;
 		(*SW2_task)();
-		//UART_OutChar('0');
 	}
 	else if (((GPIO_PORTF_RIS_R>>4)&1)&&((GPIO_PORTF_MIS_R>>4)&1)){
 		GPIO_PORTF_ICR_R |=0x10; //clear flag;
-		//UART_OutChar('4');
 		(*SW1_task)();
 	}
-	//UART_OutChar('b');
-	/*PIND0^=0x01;
-	
-	if (!SW1_flag){
-		OS_ClearMsTime();
-		//UART_OutChar('d');
-		(*SW1_task)();
-	
-	}
-	SW1_flag = 1;
-	if(OS_MsTime() > 20){//maybe longer: annyan
-		OS_ClearMsTime();
-		//UART_OutChar('d');
-		(*SW1_task)();
-
-		}*/
-	
-		//PIND0^=0x01;
-    //PIND0^=0x01;
-	
 }
 
 void Timer2A_Handler(void){
@@ -707,10 +698,6 @@ void Timer2A_Handler(void){
 	 
 	Timer1_count++;
 	count_timer2++;
-	
-  //UART_OutChar('2');
-	
-
 	 while (pt!= RunPt){
 		 if (!RunPt)
 			 break;
@@ -723,19 +710,17 @@ void Timer2A_Handler(void){
 }
 //New scheduler
 void SysTick_Handler (void){
-//	long status;
+
 	unsigned int priority = 7;//initialized as the lowest one
 	
 	TCB_Type *pt;
 	struct Sema4 * sema_pt;
-	//PIND0 = ~PIND0;
-	//PIND0 = ~PIND0;
-	//status = StartCritical();
+
 	/******************for timeout semaphore***************************/
 	if(RunPt->status == BLOCKED){
 		sema_pt = RunPt->sema4_blocked;
 		while(!sema_pt){
-			if(OS_Time - sema_pt->holding_time > TIME_OUT)
+			if(OS_MsTime() - (sema_pt->holding_time) > TIME_OUT)
 				OS_Signal(sema_pt);
 			sema_pt = sema_pt->bloked_next;
 		}
@@ -758,10 +743,6 @@ void SysTick_Handler (void){
 			}
 			pt = pt->Next;
 		}
-		
-		
-		
-	//EndCritical (status);
 	
 	NVIC_INT_CTRL_R = 0x10000000;//trigger PEND_SV handler
 }

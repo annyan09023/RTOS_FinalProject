@@ -33,6 +33,7 @@
 #include "PLL.h"
 //#include "SysTick.h"
 #include "Timer1A.h"
+#include "bank.h"
 
 void DisableInterrupts(void); // Disable interrupts
 void EnableInterrupts(void);  // Enable interrupts
@@ -393,7 +394,7 @@ void Thread2ZW(void){
 //modification ends, for testing DAS, zw
 
 //*******************final user main DEMONTRATE THIS TO TA**********
-int main(void){
+int main0(void){
   PLL_Init();
   UART_Init();	
 	ADC_Init(4);  // sequencer 3, channel 4, PD3, sampling in DAS(), software trigger
@@ -951,9 +952,8 @@ int Testmain7(void){       // Testmain7
   OS_Launch(TIME_1MS/10); // 100us, doesn't return, interrupts enabled in here TIME_1MS/10
   return 0;             // this never executes
 }
-void annya1(){
-	UART_OutChar('a');
-	//OutCRLF();
+void dummy(){
+	while(1);	
 }
 
 void annyan2 (){
@@ -961,17 +961,28 @@ void annyan2 (){
 	//OutCRLF();
 }
 
-/*int main(void){
-	//PortF0_Init();
-	//PortF4_Init();
+int main(){
+	int dead_lock;
+	Sema4Type s0; 
+	Sema4Type s1; 
+	Sema4Type s2; 
+	Sema4Type s3; 
+	
 	PLL_Init();
 	UART_Init();
-	//UART_OutChar('t');
-	OS_AddPeriodicThread(&annya1,PERIOD,4);
-	OS_AddPeriodicThread(&annyan2,2*PERIOD,5);
+	OS_Init();  
+	
+	NumCreated = 0 ;
+	NumCreated += OS_AddThread(&dummy,128,2);
+	NumCreated += OS_AddThread(&dummy,128,2);
+	NumCreated += OS_AddThread(&dummy,128,2);
 
-	//Timer2A_Init();
-	EnableInterrupts();
-	while(1);
+	OS_InitSemaphore(&s0, 4);
+	OS_InitSemaphore(&s1, 4);
+	OS_InitSemaphore(&s2, 4);
+	OS_InitSemaphore(&s3, 4);
+	bank_init();
+	dead_lock=bank_check();
+	OS_Launch(TIME_1MS/10); // 100us, doesn't return, interrupts enabled in here TIME_1MS/10
+  return 0;
 }
-*/
