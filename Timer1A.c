@@ -116,21 +116,23 @@ void OS_AddPeriodicThread(void(*task)(void),
 		case 5: PeriodicTask5 = task;break;
 	}
 	//GPIO_Init();//for the PIN0 output
-	sr = StartCritical(); 
+//	sr = StartCritical(); 
 		//UART_OutChar(count+'0');
 		//SYSCTL_RCGC1_R |= SYSCTL_RCGC1_TIMER1+0x00080000; // 0) activate timer0
+	if(count == 1){
 		TIMER1_CTL_R &= ~0x00000001;     // 1) disable timer0A during setup
 		TIMER1_CFG_R = 0;
 		TIMER1_CFG_R = 0x00000000;       // 2) configure for 32-bit timer mode
 		TIMER1_TAMR_R = 0x00000012;      // 3) configure for periodic mode, default down-up settings
-		TIMER1_TAILR_R = period-1;       // 4) reload value
+		TIMER1_TAILR_R = 80000-1;       // 4) reload value 1ms as a unit
 		TIMER1_ICR_R = 0x00000001;       // 6) clear timer1A timeout flag
 		TIMER1_IMR_R |= 0x00000001;      // 7) arm timeout interrupt
 		NVIC_PRI5_R = (NVIC_PRI5_R&0xFFFF1FFF)|(priority<<13); // 8) priority 2
 		NVIC_EN0_R = NVIC_EN0_INT21;     // 9) enable interrupt 21 in NVIC
 		TIMER1_CTL_R |= 0x00000001;      // 10) enable timer0A
-		PeriodicTask1 = task;
-	EndCritical(sr);
+	}
+		
+	//EndCritical(sr);
 }
 //	 void OS_AddPeriodicThread2(void(*task)(void), 
 //   unsigned long period, unsigned long priority){
