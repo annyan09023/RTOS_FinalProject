@@ -74,8 +74,8 @@ long StartCritical (void);    // previous I bit, disable interrupts
 void EndCritical(long sr);    // restore I bit to previous value
 void WaitForInterrupt(void);  // low power mode
 //Modified by annyan lab3
-void (*PeriodicTask1)(void);   // user function
-void (*PeriodicTask2)(void);   // user function
+//void (*PeriodicTask1)(void);   // user function
+//void (*PeriodicTask2)(void);   // user function
 
 //Modified by annyan and Zirui to drive a pin to high or low
 //void GPIO_Init(void){  volatile unsigned long delay;
@@ -94,10 +94,27 @@ void (*PeriodicTask2)(void);   // user function
 // Inputs:  task is a pointer to a user function
 //          period in usec
 // Outputs: none
-unsigned int count=0;
+/******************modified by annyan on April 21 for multiple perioidic interrupt********************/
+void (*PeriodicTask1)(void);   // user function
+void (*PeriodicTask2)(void);   // user function
+void (*PeriodicTask3)(void);   // user function
+void (*PeriodicTask4)(void);   // user function
+void (*PeriodicTask5)(void);   // user function
+int period_threads[5]={0,};
+unsigned int count = 0;
+unsigned int timera_count = 0;
 void OS_AddPeriodicThread(void(*task)(void), 
    unsigned long period, unsigned long priority){
 	long sr;
+	period_threads[count]=period;
+	count++;
+	switch(count){
+		case 1: PeriodicTask1 = task;break;
+		case 2: PeriodicTask2 = task;break;
+		case 3: PeriodicTask3 = task;break;
+		case 4: PeriodicTask4 = task;break;
+		case 5: PeriodicTask5 = task;break;
+	}
 	//GPIO_Init();//for the PIN0 output
 	sr = StartCritical(); 
 		//UART_OutChar(count+'0');
@@ -115,52 +132,65 @@ void OS_AddPeriodicThread(void(*task)(void),
 		PeriodicTask1 = task;
 	EndCritical(sr);
 }
-	 void OS_AddPeriodicThread2(void(*task)(void), 
-   unsigned long period, unsigned long priority){
-	long sr;
-	//GPIO_Init();//for the PIN0 output
-	sr = StartCritical(); 
-	
-		//SYSCTL_RCGC1_R |= 0x00080000; // 0) activate timer0
-		TIMER3_CTL_R &= ~0x00000001;     // 1) disable timer0A during setup
-		TIMER3_CFG_R = 0;
-		TIMER3_CFG_R = 0x00000000;       // 2) configure for 32-bit timer mode
-		TIMER3_TAMR_R = 0x00000012;      // 3) configure for periodic mode, default down-up settings
-		TIMER3_TAILR_R = period-1;       // 4) reload value
-		//TIMER1_TAPR_R = 49;              // 5) 1us timer1A, not functional in 32-bit mode
-		TIMER3_ICR_R = 0x00000001;       // 6) clear timer1A timeout flag
-		TIMER3_IMR_R |= 0x00000001;      // 7) arm timeout interrupt
-		NVIC_PRI8_R = (NVIC_PRI8_R&0x1FFFFFFF)|(priority<<29); // 8) priority 2
-		NVIC_EN1_R |= 8;     // 9) enable interrupt 35 in NVIC
-		TIMER3_CTL_R |= 0x00000001;      // 10) enable timer0A
-		PeriodicTask2 = task;
-	EndCritical(sr);
-}
+//	 void OS_AddPeriodicThread2(void(*task)(void), 
+//   unsigned long period, unsigned long priority){
+//	long sr;
+//	//GPIO_Init();//for the PIN0 output
+//	sr = StartCritical(); 
+//	
+//		//SYSCTL_RCGC1_R |= 0x00080000; // 0) activate timer0
+//		TIMER3_CTL_R &= ~0x00000001;     // 1) disable timer0A during setup
+//		TIMER3_CFG_R = 0;
+//		TIMER3_CFG_R = 0x00000000;       // 2) configure for 32-bit timer mode
+//		TIMER3_TAMR_R = 0x00000012;      // 3) configure for periodic mode, default down-up settings
+//		TIMER3_TAILR_R = period-1;       // 4) reload value
+//		//TIMER1_TAPR_R = 49;              // 5) 1us timer1A, not functional in 32-bit mode
+//		TIMER3_ICR_R = 0x00000001;       // 6) clear timer1A timeout flag
+//		TIMER3_IMR_R |= 0x00000001;      // 7) arm timeout interrupt
+//		NVIC_PRI8_R = (NVIC_PRI8_R&0x1FFFFFFF)|(priority<<29); // 8) priority 2
+//		NVIC_EN1_R |= 8;     // 9) enable interrupt 35 in NVIC
+//		TIMER3_CTL_R |= 0x00000001;      // 10) enable timer0A
+//		PeriodicTask2 = task;
+//	EndCritical(sr);
+//}
 
 //modified by annyan lab3
 void Timer1A_Handler(void){
 //  PIND0=1;
-	long status;
+//	long status;
+////	status= StartCritical();
+//	TIMER1_ICR_R = TIMER_ICR_TATOCINT;// acknowledge timer1A timeout
 //	status= StartCritical();
-	TIMER1_ICR_R = TIMER_ICR_TATOCINT;// acknowledge timer1A timeout
-	status= StartCritical();
-	(*PeriodicTask1)();                // execute user task
-  
-	
-	EndCritical(status);
+//	(*PeriodicTask1)();                // execute user task
+//  
+//	
+//	EndCritical(status);
 	//UART_OutChar('a');
-
+	timera_count ++;
+	int i=0;
+	for(i=0; i< count; i++){
+		if (timera_count % period_threads[i]==0){
+			switch(i){
+				case 0: (*PeriodicTask1)(); break;
+				case 1: (*PeriodicTask2)(); break;
+				case 2: (*PeriodicTask3)(); break;
+				case 3: (*PeriodicTask4)(); break;
+				case 4: (*PeriodicTask5)(); break;		
+			}
+	  }
+	}
+  TIMER1_ICR_R = TIMER_ICR_TATOCINT;
 }
 
-void Timer3A_Handler(void){
-//  PIND0=1;
-	long status;
+//void Timer3A_Handler(void){
+////  PIND0=1;
+//	long status;
 
-	TIMER3_ICR_R = TIMER_ICR_TATOCINT;// acknowledge timer1A timeout
-	status= StartCritical();
-	(*PeriodicTask2)();                // execute user task
-  
-	
-	EndCritical(status);
- //UART_OutChar('b');
-}
+//	TIMER3_ICR_R = TIMER_ICR_TATOCINT;// acknowledge timer1A timeout
+//	status= StartCritical();
+//	(*PeriodicTask2)();                // execute user task
+//  
+//	
+//	EndCritical(status);
+// //UART_OutChar('b');
+//}
