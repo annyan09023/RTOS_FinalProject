@@ -910,7 +910,7 @@ int Testmain6(void){      // Testmain6
   WaitCount3 = 0;	  // number of times s is successfully waited on
   OS_InitSemaphore(&s,0);	 // this is the test semaphore
   OS_AddPeriodicThread(&Signal1,(799*TIME_1MS)/1000,0);   // 0.799 ms, higher priority
-  OS_AddPeriodicThread2(&Signal2,(1111*TIME_1MS)/1000,1);  // 1.111 ms, lower priority
+  //OS_AddPeriodicThread2(&Signal2,(1111*TIME_1MS)/1000,1);  // 1.111 ms, lower priority
   NumCreated = 0 ;
   NumCreated += OS_AddThread(&Thread6,128,6);    	// idle thread to keep from crashing
   NumCreated += OS_AddThread(&OutputThread,128,2); 	// results output thread
@@ -961,7 +961,7 @@ void annyan2 (){
 	//OutCRLF();
 }
 
-int main(){
+int Testbank(){
 	int dead_lock;
 	Sema4Type s0; 
 	Sema4Type s1; 
@@ -985,4 +985,107 @@ int main(){
 	dead_lock=bank_check();
 	OS_Launch(TIME_1MS/10); // 100us, doesn't return, interrupts enabled in here TIME_1MS/10
   return 0;
+}
+/***********************for testing priority donation*****************/
+Sema4Type testmain1;
+void TestMain1_thread1(void);
+void TestMain1_thread2(void);
+void TestMain1_thread1() {
+	int count = 0;
+	NumCreated += OS_AddThread(&TestMain1_thread2,128,2);
+	OS_Wait(&testmain1);
+	while (count < 65576)
+		count++;
+	OS_Signal(&testmain1);
+	OS_Kill();
+}
+void TestMain1_thread2(){
+	int count = 0;
+	OS_Wait(&testmain1);
+	while (count < 65576)
+		count++;
+	OS_Signal(&testmain1);
+	OS_Kill();
+	
+}
+int Priority_donation_test(){
+	PLL_Init();
+	OS_Init();
+	OS_InitSemaphore (&testmain1, 1);
+	NumCreated = 0 ;
+	NumCreated += OS_AddThread(&TestMain1_thread1,128,3);
+	NumCreated += OS_AddThread(&dummy,128,3);
+	OS_Launch(TIME_1MS/10); 
+	return 0;
+}
+/***********************end of test****************************/
+/***********************for timeout semaphore test*****************/
+Sema4Type testmain2;
+void TestMain2_thread1(void);
+void TestMain2_thread2(void);
+void TestMain2_thread1() {
+	int count = 0;
+	NumCreated += OS_AddThread(&TestMain2_thread2,128,2);
+	OS_Wait(&testmain1);
+	while (count < 65576)
+		count++;
+	OS_Kill();
+}
+void TestMain2_thread2(){
+	int count = 0;
+	OS_Wait(&testmain1);
+	while (count < 65576)
+		count++;
+	OS_Signal(&testmain1);
+	OS_Kill();
+	
+}
+
+int timeout_semaphore(){
+	PLL_Init();
+	OS_Init();
+	OS_InitSemaphore (&testmain1, 1);
+	NumCreated = 0 ;
+	NumCreated += OS_AddThread(&TestMain2_thread1,128,3);
+	NumCreated += OS_AddThread(&dummy,128,3);
+	OS_Launch(TIME_1MS/10); 
+	return 0;
+}
+/***********************end of test**********************/
+/**********************for mutilple periodic thread test***************/
+void period1(){
+	UART_OutChar ('1');
+}
+void period2(){
+	UART_OutChar ('2');
+}
+void period3(){
+	UART_OutChar ('3');
+}
+void period4(){
+	UART_OutChar ('4');
+}
+void period5(){
+	UART_OutChar ('5');
+}
+
+int main(){
+	PLL_Init();
+	UART_Init();
+	UART_OutChar('s');
+	OS_Init();
+	OS_AddPeriodicThread(&period1, 
+   100, 1);
+	OS_AddPeriodicThread(&period2, 
+   200, 1);
+	OS_AddPeriodicThread(&period3, 
+   300, 1);
+	OS_AddPeriodicThread(&period4, 
+   400, 1);
+	OS_AddPeriodicThread(&period5, 
+   500, 1);	
+	NumCreated = 0 ;
+	NumCreated += OS_AddThread(&dummy,128,3);
+	OS_Launch(TIME_1MS/10); 
+	return 0;
 }

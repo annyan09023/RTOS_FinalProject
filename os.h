@@ -36,7 +36,7 @@ struct TCB{
 	char is_donated;         /****for priority donation*********annyan*/
 	unsigned long sleep;  /* Sleep state (used to suspend execution) */
 	unsigned short status;
-	struct Sema4* sema4_blocked;
+	struct Sema4* sema4_blocked;/****for timeout semaphore, used to check whether blocked semaphore has timed out****annyan***/
 };
 typedef struct TCB TCB_Type;
 

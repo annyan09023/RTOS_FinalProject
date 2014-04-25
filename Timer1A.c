@@ -168,8 +168,9 @@ void Timer1A_Handler(void){
 //	
 //	EndCritical(status);
 	//UART_OutChar('a');
-	timera_count ++;
 	int i=0;
+	timera_count ++;
+	
 	for(i=0; i< count; i++){
 		if (timera_count % period_threads[i]==0){
 			switch(i){

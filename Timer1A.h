@@ -33,8 +33,8 @@
 
 void OS_AddPeriodicThread(void(*task)(void), 
    unsigned long period, unsigned long priority);
-void OS_AddPeriodicThread2(void(*task)(void), 
-   unsigned long period, unsigned long priority);
+//void OS_AddPeriodicThread2(void(*task)(void), 
+//   unsigned long period, unsigned long priority);
 //Modified by Annyan and Zirui
 
 //end of modification
