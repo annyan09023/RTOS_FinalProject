@@ -86,9 +86,24 @@ void WaitForInterrupt(void);  // low power mode
 AddIndexFifo(Rx, FIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
 AddIndexFifo(Tx, FIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
 
+
+//path expression
+int state=3;
+int path[4][4]={   /* init inchar outchar close */
+/*  column             0     1      2      3 */
+/* init row 0 */     { 0,    1,     1,     1 },
+/* inchar row 1 */   { 0,    1,     1,     1 },
+/* outchar row 2 */  { 0,    1,     1,     1 },
+/* close row 3 */    { 1,    0,     0,     0 }}
+}
+
+
 // Initialize UART0
 // Baud rate is 115200 bits/sec
 void UART_Init(void){
+  if (path[state][0]==0) return; // refuse to execute
+  state=0;
+  
   SYSCTL_RCGC1_R |= SYSCTL_RCGC1_UART0; // activate UART0
   SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOA; // activate port A
   RxFifo_Init();                        // initialize empty FIFOs
@@ -115,6 +130,16 @@ void UART_Init(void){
   NVIC_EN0_R = NVIC_EN0_INT5;           // enable interrupt 5 in NVIC
   EnableInterrupts();
 }
+
+
+void UART_Close(void){
+  if (path[state][3]==0) return; // refuse to execute
+  state=3;
+  
+  UART0_CTL_R&=~0x0001; //disable UART
+}
+
+
 // copy from hardware RX FIFO to software RX FIFO
 // stop when hardware RX FIFO is empty or software RX FIFO is full
 void static copyHardwareToSoftware(void){
@@ -137,12 +162,19 @@ void static copySoftwareToHardware(void){
 // spin if RxFifo is empty
 unsigned char UART_InChar(void){
   char letter;
+  if (path[state][1]==0) return; // refuse to execute
+  state=1;
+  
+  
   while(RxFifo_Get(&letter) == FIFOFAIL){};
   return(letter);
 }
 // output ASCII character to UART
 // spin if TxFifo is full
 void UART_OutChar(unsigned char data){
+  if (path[state][2]==0) return; // refuse to execute
+  state=2;
+
   while(TxFifo_Put(data) == FIFOFAIL){};
   UART0_IM_R &= ~UART_IM_TXIM;          // disable TX FIFO interrupt
   copySoftwareToHardware();
