@@ -103,8 +103,7 @@ int lcd_path[4][4]={    /* init writecommand writedata close */
 /* init row 0 */           { 0,      1,         1,       1 },
 /* writecommand row 1 */   { 0,      1,         1,       1 },
 /* writedata row 2 */      { 0,      1,         1,       1 },
-/* close row 3 */          { 1,      0,         0,       0 }
-}
+/* close row 3 */          { 1,      0,         0,       0 }};
 
 struct Sema4 LCDdisplay;
 
@@ -406,8 +405,8 @@ static short _height = ST7735_TFTHEIGHT;
 // NOTE: These functions will crash or stall indefinitely if
 // the SSI0 module is not initialized and enabled.
 void static writecommand(unsigned char c) {
-  if (uart_path[uart_state][1]==0) return; // refuse to execute
-  uart_state=1;
+  if (lcd_path[lcd_state][1]==0) return; // refuse to execute
+  lcd_state=1;
 
 
                                         // wait until SSI0 not busy/transmit FIFO empty
@@ -420,8 +419,8 @@ void static writecommand(unsigned char c) {
 
 
 void static writedata(unsigned char c) {
-  if (uart_path[uart_state][2]==0) return; // refuse to execute
-  uart_state=2;
+  if (lcd_path[lcd_state][2]==0) return; // refuse to execute
+  lcd_state=2;
 
 
   while((SSI0_SR_R&SSI_SR_TNF)==0){};   // wait until transmit FIFO not full
@@ -599,8 +598,8 @@ void static commandList(const unsigned char *addr) {
 void static commonInit(const unsigned char *cmdList) {
   volatile unsigned long delay;
   
-  if (uart_path[uart_state][0]==0) return; // refuse to execute
-  uart_state=0;
+  if (lcd_path[lcd_state][0]==0) return; // refuse to execute
+  lcd_state=0;
   
   
   ColStart  = RowStart = 0; // May be overridden in init func
@@ -653,8 +652,8 @@ void static commonInit(const unsigned char *cmdList) {
 
 void closeLCD(void){
 
-  if (uart_path[uart_state][3]==0) return; // refuse to execute
-  uart_state=3;
+  if (lcd_path[lcd_state][3]==0) return; // refuse to execute
+  lcd_state=3;
   SSI0_CR1_R &= 0xfffffffd;            // SSI_CR1_SSE = 0x00000002  
   // disable SSI Synchronous Serial Port 
 }

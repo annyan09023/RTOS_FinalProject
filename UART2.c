@@ -94,8 +94,7 @@ int uart_path[4][4]={   /* init inchar outchar close */
 /* init row 0 */     { 0,    1,     1,     1 },
 /* inchar row 1 */   { 0,    1,     1,     1 },
 /* outchar row 2 */  { 0,    1,     1,     1 },
-/* close row 3 */    { 1,    0,     0,     0 }
-}
+/* close row 3 */    { 1,    0,     0,     0 }};
 
 
 // Initialize UART0
@@ -133,7 +132,7 @@ void UART_Init(void){
 
 
 void UART_Close(void){
-  if (uart_path[state][3]==0) return; // refuse to execute
+  if (uart_path[uart_state][3]==0) return; // refuse to execute
   uart_state=3;
   
   UART0_CTL_R&=~0x0001; //disable UART
