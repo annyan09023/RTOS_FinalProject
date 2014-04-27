@@ -160,6 +160,15 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	//Modified by annyan for Time out semaphore
 	TCBS[thread_num].sema4_blocked = NULL;
 	//End of modification
+	
+	
+	//by zw for auto-kill finished foreground threads
+	Stack[thread_num][STACKSIZE-3]=(long) &OS_Kill;
+	//if a foreground thread finsh without OS_Kill, 
+	//then forces LR bringing the thread to run OS_Kill
+	
+	
+	
 	Stack[thread_num][STACKSIZE-2] = (long)task; //PC
 	
 	/**********************bank******************************/
