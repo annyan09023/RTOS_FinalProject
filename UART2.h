@@ -42,6 +42,10 @@
 // Output: none
 void UART_Init(void);
 
+// disable uart
+void UART_Close(void);
+
+
 //------------UART_InChar------------
 // Wait for new serial port input
 // Input: none
