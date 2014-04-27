@@ -96,7 +96,15 @@
 #define SYSCTL_RCGC1_SSI0       0x00000010  // SSI0 Clock Gating Control
 #define SYSCTL_RCGC2_GPIOA      0x00000001  // port A Clock Gating Control
 
-
+//path expression
+int lcd_state=3;
+int lcd_path[4][4]={    /* init writecommand writedata close */
+/*  column                   0       1          2        3 */
+/* init row 0 */           { 0,      1,         1,       1 },
+/* writecommand row 1 */   { 0,      1,         1,       1 },
+/* writedata row 2 */      { 0,      1,         1,       1 },
+/* close row 3 */          { 1,      0,         0,       0 }
+}
 
 struct Sema4 LCDdisplay;
 
@@ -398,6 +406,10 @@ static short _height = ST7735_TFTHEIGHT;
 // NOTE: These functions will crash or stall indefinitely if
 // the SSI0 module is not initialized and enabled.
 void static writecommand(unsigned char c) {
+  if (uart_path[uart_state][1]==0) return; // refuse to execute
+  uart_state=1;
+
+
                                         // wait until SSI0 not busy/transmit FIFO empty
   while((SSI0_SR_R&SSI_SR_BSY)==SSI_SR_BSY){};
   DC = DC_COMMAND;
@@ -408,6 +420,10 @@ void static writecommand(unsigned char c) {
 
 
 void static writedata(unsigned char c) {
+  if (uart_path[uart_state][2]==0) return; // refuse to execute
+  uart_state=2;
+
+
   while((SSI0_SR_R&SSI_SR_TNF)==0){};   // wait until transmit FIFO not full
   DC = DC_DATA;
   SSI0_DR_R = c;                        // data out
@@ -582,6 +598,11 @@ void static commandList(const unsigned char *addr) {
 // Initialization code common to both 'B' and 'R' type displays
 void static commonInit(const unsigned char *cmdList) {
   volatile unsigned long delay;
+  
+  if (uart_path[uart_state][0]==0) return; // refuse to execute
+  uart_state=0;
+  
+  
   ColStart  = RowStart = 0; // May be overridden in init func
 
   //SysTick_Init();                       // initialize SysTick timer
@@ -628,6 +649,14 @@ void static commonInit(const unsigned char *cmdList) {
   SSI0_CR1_R |= SSI_CR1_SSE;            // enable SSI
 
   if(cmdList) commandList(cmdList);
+}
+
+void closeLCD(void){
+
+  if (uart_path[uart_state][3]==0) return; // refuse to execute
+  uart_state=3;
+  SSI0_CR1_R &= 0xfffffffd;            // SSI_CR1_SSE = 0x00000002  
+  // disable SSI Synchronous Serial Port 
 }
 
 
