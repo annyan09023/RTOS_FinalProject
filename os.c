@@ -30,14 +30,14 @@ void PendSV(void);
 #define NVIC_ST_RELOAD_M        0x00FFFFFF  // Counter load value
 #define PIND0 (*((volatile unsigned long *)0x40007004))
 /*******************************TCB**************************************************/
-#define THREADS_NUM 10
+#define THREADS_NUM 20
 #define STACKSIZE 100
 #define DEAD 0xff78
 #define ACTIVE 0x09dd
 #define BLOCKED 0xff12
 #define BLOCKED_STRONG 0xff13
 #define INVALID_PRIORITY 18
-#define TIME_OUT 1000 //after 100us, thread will release semaphore
+#define TIME_OUT 1000 //after 1000ms, thread will release semaphore
 
 TCB_Type TCBS [THREADS_NUM];
 TCB_Type *RunPt;
@@ -772,6 +772,10 @@ void SysTick_Handler (void){
 	
 	NVIC_INT_CTRL_R = 0x10000000;//trigger PEND_SV handler
 }
+
+
+
+
 
 
 
