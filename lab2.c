@@ -986,6 +986,8 @@ int Testbank(){
 	OS_Launch(TIME_1MS/10); // 100us, doesn't return, interrupts enabled in here TIME_1MS/10
   return 0;
 }
+
+
 /***********************for testing priority donation*****************/
 Sema4Type testmain1;
 void TestMain1_thread1(void);
@@ -1008,7 +1010,7 @@ void TestMain1_thread2(){
 	OS_Kill();
 	
 }
-int Priority_donation_test(){
+int Test_prioritydonation(){
 	PLL_Init();
 	OS_Init();
 	OS_InitSemaphore (&testmain1, 1);
@@ -1019,6 +1021,8 @@ int Priority_donation_test(){
 	return 0;
 }
 /***********************end of test****************************/
+
+
 /***********************for timeout semaphore test*****************/
 Sema4Type testmain2;
 void TestMain2_thread1(void);
@@ -1041,7 +1045,7 @@ void TestMain2_thread2(){
 	
 }
 
-int timeout_semaphore(){
+int Test_timeout_semaphore(){
 	PLL_Init();
 	OS_Init();
 	OS_InitSemaphore (&testmain1, 1);
@@ -1072,7 +1076,7 @@ void period5(){
 
 
 
-int testmain_multiplePeriodic(void){
+int Test_periodicinterrupts(void){
 
 	PLL_Init();
 	UART_Init();
@@ -1179,7 +1183,7 @@ void threadM3(void){
 
 
 
-int main(void){  // testmain_monitor
+int Test_Monitor(void){  // testmain_monitor
   PLL_Init();
 	UART_Init();
 	
@@ -1198,4 +1202,41 @@ int main(void){  // testmain_monitor
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
   return 0;            // this never executes
 }
+int test_20threads_count = 0;
+void test_20threads(){
+	UART_OutUDec(test_20threads_count++);
+	UART_OutChar('.');
+	while (1);
+}
 
+int test_morethreads(void){  // testmain_monitor
+  PLL_Init();
+	UART_Init();
+	
+	UART_OutChar('d');
+  OS_Init();           // initialize, disable interrupts
+  PortE_Init();       // profile user threads
+  NumCreated = 0 ;
+  NumCreated += OS_AddThread(&test_20threads,128,1); 
+  NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+  NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+  NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+  NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 
+	NumCreated += OS_AddThread(&test_20threads,128,1); 	
+  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+  return 0;            // this never executes
+}
