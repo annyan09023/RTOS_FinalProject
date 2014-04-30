@@ -35,6 +35,7 @@ void PendSV(void);
 #define DEAD 0xff78
 #define ACTIVE 0x09dd
 #define BLOCKED 0xff12
+#define BLOCKED_STRONG 0xff13
 #define INVALID_PRIORITY 18
 #define TIME_OUT 1000 //after 100us, thread will release semaphore
 
@@ -766,4 +767,84 @@ void SysTick_Handler (void){
 		}
 	
 	NVIC_INT_CTRL_R = 0x10000000;//trigger PEND_SV handler
+}
+
+
+
+//monitor
+void CondVar_Wait(Sema4Type *lockPt, MonitorType *CondVarPt){
+	//move thread to waiting queue and suspend thread
+	
+	if (CondVarPt->first == NULL){
+
+			CondVarPt->first = (struct Blocked_Strong_list_elem *)malloc (sizeof(struct Blocked_Strong_list_elem));
+			RunPt->status = BLOCKED_STRONG; //blocked on CondVar
+			CondVarPt->first->Bloker = RunPt;
+			CondVarPt->first->Next = NULL;			
+		}
+		else{
+			struct Blocked_Strong_list_elem * cur = CondVarPt->first;
+		  while (cur->Next!=NULL){
+				cur = cur->Next;
+			}
+			cur->Next = (struct Blocked_Strong_list_elem *)malloc (sizeof(struct Blocked_Strong_list_elem));
+			RunPt->status = BLOCKED_STRONG;
+			cur->Next->Bloker = RunPt;
+			cur->Next->Next = NULL;
+		}
+	
+	
+	OS_bSignal(lockPt);
+	OS_Suspend();
+	
+	//onsignal,wakeup,re-acquire lock
+	OS_bWait(lockPt);
+}
+
+void CondVar_Signal(Sema4Type *lockPt, MonitorType *CondVarPt){
+	//wake up one processes waiting on condVar
+	
+	if (CondVarPt->first !=NULL){
+			struct Blocked_Strong_list_elem * cur = CondVarPt->first;
+			cur = cur->Next;
+			CondVarPt->first->Bloker->status = ACTIVE;
+			free(CondVarPt->first);
+			CondVarPt->first = cur;
+		}
+	
+}
+
+
+
+int Monitor_Get(Sema4Type *lockPt, MonitorType *CondVarPt) {
+	int item;
+	
+	OS_bWait(lockPt);
+	while (CondVarPt->mStackSize<=0){
+		CondVar_Wait(lockPt, CondVarPt);
+	}		
+	
+	
+	item=CondVarPt->monitorStack[CondVarPt->mStackSize-1];
+	CondVarPt->mStackSize--;
+	
+	
+	OS_bSignal(lockPt);
+	return item;
+}
+
+void Monitor_Put(Sema4Type *lockPt, MonitorType *CondVarPt, int item){
+	OS_bWait(lockPt); 
+	
+	
+	CondVarPt->mStackSize++;
+	CondVarPt->monitorStack[CondVarPt->mStackSize-1]=item;
+	
+	
+	CondVar_Signal(lockPt, CondVarPt);
+	OS_bSignal(lockPt);
+}
+
+void OS_InitMonitor(MonitorType *CondVarPt){
+	CondVarPt->mStackSize=0;
 }
