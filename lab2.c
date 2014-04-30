@@ -1069,7 +1069,7 @@ void period5(){
 	UART_OutChar ('5');
 }
 
-int main(){
+int multiple_periodic(){
 	PLL_Init();
 	UART_Init();
 	UART_OutChar('s');
@@ -1088,4 +1088,20 @@ int main(){
 	NumCreated += OS_AddThread(&dummy,128,3);
 	OS_Launch(TIME_1MS/10); 
 	return 0;
+}
+/****************for Kill foreground threads that finish*************/
+void Testmain3_1(){
+	UART_OutChar('a');
+}
+int main(){
+	PLL_Init();
+  UART_Init();
+
+	OS_Init();
+	NumCreated = 0 ;
+	NumCreated += OS_AddThread(&Testmain3_1, 128, 3);
+	NumCreated += OS_AddThread(&dummy,128,3);
+	OS_Launch(TIME_1MS/10); 
+	return 0;
+	
 }
