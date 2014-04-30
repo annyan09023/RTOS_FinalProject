@@ -1108,7 +1108,7 @@ void threadKF2(void){
 	}
 }
 
-int testmain_killForeground(void){  // testmain_killForeground
+int main(void){  // testmain_killForeground
   PLL_Init();
 	UART_Init();
 	
@@ -1116,8 +1116,8 @@ int testmain_killForeground(void){  // testmain_killForeground
   OS_Init();           // initialize, disable interrupts
   PortE_Init();       // profile user threads
   NumCreated = 0 ;
-  NumCreated += OS_AddThread(&threadKF1,128,1); 
   NumCreated += OS_AddThread(&threadKF2,128,1); 
+  NumCreated += OS_AddThread(&threadKF1,128,1); 
  
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
   return 0;            // this never executes
@@ -1179,7 +1179,7 @@ void threadM3(void){
 
 
 
-int main(void){  // testmain_monitor
+int testmain_monitor(void){  // testmain_monitor
   PLL_Init();
 	UART_Init();
 	
