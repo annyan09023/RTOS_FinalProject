@@ -30,6 +30,7 @@
 
 #include "FIFO.h"
 #include "UART2.h"
+#include "os.h"
 
 #define NVIC_EN0_INT5           0x00000020  // Interrupt 5 enable
 #define NVIC_EN0_R              (*((volatile unsigned long *)0xE000E100))  // IRQ 0 to 31 Set Enable Register
@@ -100,7 +101,7 @@ int uart_path[4][4]={   /* init inchar outchar close */
 // Initialize UART0
 // Baud rate is 115200 bits/sec
 void UART_Init(void){
-  if (uart_path[uart_state][0]==0) return; // refuse to execute
+  if (uart_path[uart_state][0]==0) OS_Kill(); // refuse to execute
   uart_state=0;
   
   SYSCTL_RCGC1_R |= SYSCTL_RCGC1_UART0; // activate UART0
@@ -132,7 +133,7 @@ void UART_Init(void){
 
 
 void UART_Close(void){
-  if (uart_path[uart_state][3]==0) return; // refuse to execute
+  if (uart_path[uart_state][3]==0) OS_Kill(); // refuse to execute
   uart_state=3;
   
   UART0_CTL_R&=~0x0001; //disable UART
@@ -161,7 +162,7 @@ void static copySoftwareToHardware(void){
 // spin if RxFifo is empty
 unsigned char UART_InChar(void){
   char letter;
-  if (uart_path[uart_state][1]==0) return; // refuse to execute
+  if (uart_path[uart_state][1]==0) OS_Kill(); // refuse to execute
   uart_state=1;
   
   
@@ -171,7 +172,7 @@ unsigned char UART_InChar(void){
 // output ASCII character to UART
 // spin if TxFifo is full
 void UART_OutChar(unsigned char data){
-  if (uart_path[uart_state][2]==0) return; // refuse to execute
+  if (uart_path[uart_state][2]==0) OS_Kill(); // refuse to execute
   uart_state=2;
 
   while(TxFifo_Put(data) == FIFOFAIL){};

@@ -74,8 +74,8 @@ void OS_Init(){
 	//PLL_Init(); //set processor clock to 50MHZ
 	NVIC_ST_CTRL_R = 0;
 	NVIC_ST_CURRENT_R = 0;
-	NVIC_SYS_PRI3_R =((NVIC_SYS_PRI3_R & 0x00ffffff)|(6<<29));//priority 7;
-	NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R & 0xFF1FFFFF)|(7<<21);
+	NVIC_SYS_PRI3_R =((NVIC_SYS_PRI3_R & 0x00ffffff)|(6<<29));//priority 6;
+	NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R & 0xFF1FFFFF)|(7<<21);//priority 7;
 	Timer2A_Init();
 }
 /*********required to be written?********************/
@@ -163,7 +163,7 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	
 	
 	//by zw for auto-kill finished foreground threads
-	Stack[thread_num][STACKSIZE-3]=(long) &OS_Kill;
+	Stack[thread_num][STACKSIZE-3]=(long) OS_Kill;
 	//if a foreground thread finsh without OS_Kill, 
 	//then forces LR bringing the thread to run OS_Kill
 	

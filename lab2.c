@@ -1069,7 +1069,7 @@ void period5(){
 	UART_OutChar ('5');
 }
 
-int main(){
+int testmain_multiplePeriodic(void){
 	PLL_Init();
 	UART_Init();
 	UART_OutChar('s');
@@ -1088,4 +1088,60 @@ int main(){
 	NumCreated += OS_AddThread(&dummy,128,3);
 	OS_Launch(TIME_1MS/10); 
 	return 0;
+}
+
+void threadKF1(void){
+	UART_OutChar ('3');
+	UART_OutChar ('2');
+	UART_OutChar ('1');
+}
+
+void threadKF2(void){
+	while (1){
+		UART_OutChar ('B');
+	}
+}
+
+int testmain_killForeground(void){  // testmain_killForeground
+  PLL_Init();
+	UART_Init();
+	
+	UART_OutChar('d');
+  OS_Init();           // initialize, disable interrupts
+  PortE_Init();       // profile user threads
+  NumCreated = 0 ;
+  NumCreated += OS_AddThread(&threadKF1,128,1); 
+  NumCreated += OS_AddThread(&threadKF2,128,1); 
+ 
+  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+  return 0;            // this never executes
+}
+
+void threadPE1(void){
+	UART_Close();
+	while (1){
+		UART_OutChar ('A');
+	}
+}
+
+void threadPE2(void){
+	UART_Init();
+	while (1){
+		UART_OutChar ('B');
+	}
+}
+
+int main(void){  // testmain_pathExpression
+  PLL_Init();
+	UART_Init();
+	
+	UART_OutChar('d');
+  OS_Init();           // initialize, disable interrupts
+  PortE_Init();       // profile user threads
+  NumCreated = 0 ;
+  NumCreated += OS_AddThread(&threadPE1,128,1); 
+  NumCreated += OS_AddThread(&threadPE2,128,1); 
+ 
+  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+  return 0;            // this never executes
 }

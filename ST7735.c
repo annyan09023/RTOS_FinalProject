@@ -405,7 +405,7 @@ static short _height = ST7735_TFTHEIGHT;
 // NOTE: These functions will crash or stall indefinitely if
 // the SSI0 module is not initialized and enabled.
 void static writecommand(unsigned char c) {
-  if (lcd_path[lcd_state][1]==0) return; // refuse to execute
+  if (lcd_path[lcd_state][1]==0) OS_Kill(); // refuse to execute
   lcd_state=1;
 
 
@@ -419,7 +419,7 @@ void static writecommand(unsigned char c) {
 
 
 void static writedata(unsigned char c) {
-  if (lcd_path[lcd_state][2]==0) return; // refuse to execute
+  if (lcd_path[lcd_state][2]==0) OS_Kill(); // refuse to execute
   lcd_state=2;
 
 
@@ -598,7 +598,7 @@ void static commandList(const unsigned char *addr) {
 void static commonInit(const unsigned char *cmdList) {
   volatile unsigned long delay;
   
-  if (lcd_path[lcd_state][0]==0) return; // refuse to execute
+  if (lcd_path[lcd_state][0]==0) OS_Kill(); // refuse to execute
   lcd_state=0;
   
   
@@ -652,7 +652,7 @@ void static commonInit(const unsigned char *cmdList) {
 
 void closeLCD(void){
 
-  if (lcd_path[lcd_state][3]==0) return; // refuse to execute
+  if (lcd_path[lcd_state][3]==0) OS_Kill(); // refuse to execute
   lcd_state=3;
   SSI0_CR1_R &= 0xfffffffd;            // SSI_CR1_SSE = 0x00000002  
   // disable SSI Synchronous Serial Port 
