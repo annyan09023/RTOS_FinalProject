@@ -498,6 +498,11 @@
               <FileType>1</FileType>
               <FilePath>.\ADCSWTrigger.c</FilePath>
             </File>
+            <File>
+              <FileName>bank.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\bank.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
