@@ -1150,22 +1150,24 @@ int testmain_pathExpression(void){  // testmain_pathExpression
 MonitorType CVMonitor;
 Sema4Type CVSema4;
 void threadM1(void){
-	OS_Sleep(100);
 	while (1){
+		OS_Sleep(1000);
 		Monitor_Put(&CVSema4, &CVMonitor, 3425);
-		UART_OutChar ('A');
 	}
 }
 
 void threadM2(void){
+	int item;
 	while (1){
-		if (Monitor_Get(&CVSema4, &CVMonitor)) UART_OutChar ('B');
+		item=Monitor_Get(&CVSema4, &CVMonitor);
+		UART_OutUDec(item);
+		UART_OutChar('.');
 	}
 }
 
 void threadM3(void){
 	while (1){
-		if (Monitor_Get(&CVSema4, &CVMonitor)) UART_OutChar ('C');
+		//UART_OutChar('C');
 	}
 }
 
