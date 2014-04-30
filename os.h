@@ -42,6 +42,19 @@ typedef struct TCB TCB_Type;
 
 typedef struct Sema4 Sema4Type;
 
+#define MSSIZE 100
+struct Monitor{
+	struct Blocked_Strong_list_elem *first;
+	int monitorStack[MSSIZE];
+	int mStackSize;
+};
+
+typedef struct Monitor MonitorType;
+
+struct Blocked_Strong_list_elem{
+	struct TCB *Bloker;
+	struct Blocked_Strong_list_elem *Next;
+};
 
 struct Blocked_list_elem{
 	struct TCB *Bloker;
@@ -299,6 +312,10 @@ void OS_Launch(unsigned long theTimeSlice);
 void PortF4_Init(void);
 void PortF0_Init(void);
 void Timer2A_Init(void);
+
+int Monitor_Get(Sema4Type *lockPt, MonitorType *CondVarPt);
+void Monitor_Put(Sema4Type *lockPt, MonitorType *CondVarPt, int item);
+void OS_InitMonitor(MonitorType *CondVarPt);
 
 
 #endif

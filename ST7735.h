@@ -120,6 +120,9 @@ enum initRFlags{
 #define ST7735_YELLOW  0xFFE0
 #define ST7735_WHITE   0xFFFF
 
+
+void closeLCD(void);
+
 // Initialization for ST7735B screens
 void ST7735_InitB(void);
 

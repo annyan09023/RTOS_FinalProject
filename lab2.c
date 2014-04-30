@@ -1069,7 +1069,11 @@ void period5(){
 	UART_OutChar ('5');
 }
 
-int multiple_periodic(){
+
+
+
+int testmain_multiplePeriodic(void){
+
 	PLL_Init();
 	UART_Init();
 	UART_OutChar('s');
@@ -1089,19 +1093,107 @@ int multiple_periodic(){
 	OS_Launch(TIME_1MS/10); 
 	return 0;
 }
-/****************for Kill foreground threads that finish*************/
-void Testmain3_1(){
-	UART_OutChar('a');
-}
-int main(){
-	PLL_Init();
-  UART_Init();
 
-	OS_Init();
-	NumCreated = 0 ;
-	NumCreated += OS_AddThread(&Testmain3_1, 128, 3);
-	NumCreated += OS_AddThread(&dummy,128,3);
-	OS_Launch(TIME_1MS/10); 
-	return 0;
-	
+
+
+void threadKF1(void){
+	UART_OutChar ('3');
+	UART_OutChar ('2');
+	UART_OutChar ('1');
 }
+
+void threadKF2(void){
+	while (1){
+		UART_OutChar ('B');
+	}
+}
+
+int testmain_killForeground(void){  // testmain_killForeground
+  PLL_Init();
+	UART_Init();
+	
+	UART_OutChar('d');
+  OS_Init();           // initialize, disable interrupts
+  PortE_Init();       // profile user threads
+  NumCreated = 0 ;
+  NumCreated += OS_AddThread(&threadKF1,128,1); 
+  NumCreated += OS_AddThread(&threadKF2,128,1); 
+ 
+  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+  return 0;            // this never executes
+}
+
+void threadPE1(void){
+	UART_Close();
+	while (1){
+		UART_OutChar ('A');
+	}
+}
+
+void threadPE2(void){
+	UART_Init();
+	while (1){
+		UART_OutChar ('B');
+	}
+}
+
+int testmain_pathExpression(void){  // testmain_pathExpression
+  PLL_Init();
+	UART_Init();
+	
+	UART_OutChar('d');
+  OS_Init();           // initialize, disable interrupts
+  PortE_Init();       // profile user threads
+  NumCreated = 0 ;
+  NumCreated += OS_AddThread(&threadPE1,128,1); 
+  NumCreated += OS_AddThread(&threadPE2,128,1); 
+ 
+  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+  return 0;            // this never executes
+}
+
+
+MonitorType CVMonitor;
+Sema4Type CVSema4;
+void threadM1(void){
+	OS_Sleep(100);
+	while (1){
+		Monitor_Put(&CVSema4, &CVMonitor, 3425);
+		UART_OutChar ('A');
+	}
+}
+
+void threadM2(void){
+	while (1){
+		if (Monitor_Get(&CVSema4, &CVMonitor)) UART_OutChar ('B');
+	}
+}
+
+void threadM3(void){
+	while (1){
+		if (Monitor_Get(&CVSema4, &CVMonitor)) UART_OutChar ('C');
+	}
+}
+
+
+
+int main(void){  // testmain_monitor
+  PLL_Init();
+	UART_Init();
+	
+	UART_OutChar('d');
+  OS_Init();           // initialize, disable interrupts
+  PortE_Init();       // profile user threads
+	
+	OS_InitMonitor(&CVMonitor);
+	OS_InitSemaphore(&CVSema4, 1);
+	
+  NumCreated = 0 ;
+  NumCreated += OS_AddThread(&threadM1,128,1); 
+  NumCreated += OS_AddThread(&threadM2,128,1); 
+  NumCreated += OS_AddThread(&threadM3,128,1); 
+	
+  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+  return 0;            // this never executes
+}
+

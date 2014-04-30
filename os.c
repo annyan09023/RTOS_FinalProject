@@ -35,6 +35,7 @@ void PendSV(void);
 #define DEAD 0xff78
 #define ACTIVE 0x09dd
 #define BLOCKED 0xff12
+#define BLOCKED_STRONG 0xff13
 #define INVALID_PRIORITY 18
 #define TIME_OUT 1000 //after 100us, thread will release semaphore
 
@@ -74,8 +75,8 @@ void OS_Init(){
 	//PLL_Init(); //set processor clock to 50MHZ
 	NVIC_ST_CTRL_R = 0;
 	NVIC_ST_CURRENT_R = 0;
-	NVIC_SYS_PRI3_R =((NVIC_SYS_PRI3_R & 0x00ffffff)|(6<<29));//priority 7;
-	NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R & 0xFF1FFFFF)|(7<<21);
+	NVIC_SYS_PRI3_R =((NVIC_SYS_PRI3_R & 0x00ffffff)|(6<<29));//priority 6;
+	NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R & 0xFF1FFFFF)|(7<<21);//priority 7;
 	Timer2A_Init();
 }
 /*********required to be written?********************/
@@ -161,6 +162,15 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	//Modified by annyan for Time out semaphore
 	TCBS[thread_num].sema4_blocked = NULL;
 	//End of modification
+	
+	
+	//by zw for auto-kill finished foreground threads
+	Stack[thread_num][STACKSIZE-3]=(long) OS_Kill;
+	//if a foreground thread finsh without OS_Kill, 
+	//then forces LR bringing the thread to run OS_Kill
+	
+	
+	
 	Stack[thread_num][STACKSIZE-2] = (long)task; //PC
 	/**************Kill foreground threads that finish, modified by annyan**********/
 	Stack[thread_num][STACKSIZE-3] = (long)&OS_Kill;
@@ -761,4 +771,84 @@ void SysTick_Handler (void){
 		}
 	
 	NVIC_INT_CTRL_R = 0x10000000;//trigger PEND_SV handler
+}
+
+
+
+//monitor
+void CondVar_Wait(Sema4Type *lockPt, MonitorType *CondVarPt){
+	//move thread to waiting queue and suspend thread
+	
+	if (CondVarPt->first == NULL){
+
+			CondVarPt->first = (struct Blocked_Strong_list_elem *)malloc (sizeof(struct Blocked_Strong_list_elem));
+			RunPt->status = BLOCKED_STRONG; //blocked on CondVar
+			CondVarPt->first->Bloker = RunPt;
+			CondVarPt->first->Next = NULL;			
+		}
+		else{
+			struct Blocked_Strong_list_elem * cur = CondVarPt->first;
+		  while (cur->Next!=NULL){
+				cur = cur->Next;
+			}
+			cur->Next = (struct Blocked_Strong_list_elem *)malloc (sizeof(struct Blocked_Strong_list_elem));
+			RunPt->status = BLOCKED_STRONG;
+			cur->Next->Bloker = RunPt;
+			cur->Next->Next = NULL;
+		}
+	
+	
+	OS_bSignal(lockPt);
+	OS_Suspend();
+	
+	//onsignal,wakeup,re-acquire lock
+	OS_bWait(lockPt);
+}
+
+void CondVar_Signal(Sema4Type *lockPt, MonitorType *CondVarPt){
+	//wake up one processes waiting on condVar
+	
+	if (CondVarPt->first !=NULL){
+			struct Blocked_Strong_list_elem * cur = CondVarPt->first;
+			cur = cur->Next;
+			CondVarPt->first->Bloker->status = ACTIVE;
+			free(CondVarPt->first);
+			CondVarPt->first = cur;
+		}
+	
+}
+
+
+
+int Monitor_Get(Sema4Type *lockPt, MonitorType *CondVarPt) {
+	int item;
+	
+	OS_bWait(lockPt);
+	while (CondVarPt->mStackSize<=0){
+		CondVar_Wait(lockPt, CondVarPt);
+	}		
+	
+	
+	item=CondVarPt->monitorStack[CondVarPt->mStackSize-1];
+	CondVarPt->mStackSize--;
+	
+	
+	OS_bSignal(lockPt);
+	return item;
+}
+
+void Monitor_Put(Sema4Type *lockPt, MonitorType *CondVarPt, int item){
+	OS_bWait(lockPt); 
+	
+	
+	CondVarPt->mStackSize++;
+	CondVarPt->monitorStack[CondVarPt->mStackSize-1]=item;
+	
+	
+	CondVar_Signal(lockPt, CondVarPt);
+	OS_bSignal(lockPt);
+}
+
+void OS_InitMonitor(MonitorType *CondVarPt){
+	CondVarPt->mStackSize=0;
 }
