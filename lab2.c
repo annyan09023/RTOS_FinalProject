@@ -1069,7 +1069,11 @@ void period5(){
 	UART_OutChar ('5');
 }
 
+
+
+
 int testmain_multiplePeriodic(void){
+
 	PLL_Init();
 	UART_Init();
 	UART_OutChar('s');
@@ -1089,6 +1093,8 @@ int testmain_multiplePeriodic(void){
 	OS_Launch(TIME_1MS/10); 
 	return 0;
 }
+
+
 
 void threadKF1(void){
 	UART_OutChar ('3');
@@ -1192,3 +1198,4 @@ int main(void){  // testmain_monitor
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
   return 0;            // this never executes
 }
+

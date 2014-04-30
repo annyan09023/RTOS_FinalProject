@@ -96,6 +96,7 @@ int thread_num =0;
 int thread_pt=0;
 unsigned int count_die=0;
 unsigned int count_num = 0;
+
 int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long priority){
 
 	long status;
@@ -171,6 +172,9 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	
 	
 	Stack[thread_num][STACKSIZE-2] = (long)task; //PC
+	/**************Kill foreground threads that finish, modified by annyan**********/
+	Stack[thread_num][STACKSIZE-3] = (long)&OS_Kill;
+	/**************end of modification*******************************/
 	
 	/**********************bank******************************/
 	bank_init_tcb(&TCBS[thread_num], thread_num);
