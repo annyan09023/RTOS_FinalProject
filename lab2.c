@@ -225,7 +225,7 @@ void Producer(unsigned long data){
     NumSamples++;               // number of samples
 		//UART_OutChar('5');
 		//ST7735_Message (1, 0, "data:", data);
-    if(OS_Fifo_Put(data) == 0){ // send to consumer
+    if(OS_Fifo_Put(data, 0) == 0){ // send to consumer
 			
       DataLost++;
 			//UART_OutChar(DataLost+'0');
@@ -253,7 +253,7 @@ unsigned long myId = OS_Id();
   while(NumSamples < RUNLENGTH) { 
     PE2 = 0x04;
     for(t = 0; t < 64; t++){   // collect 64 ADC samples
-      data = OS_Fifo_Get();    // get from producer
+      data = OS_Fifo_Get(0);    // get from producer
       x[t] = data;             // real part is 0 to 4095, imaginary part is 0
 			/*UART_OutChar('|');
 			UART_OutChar(data/1000+'0');
@@ -411,7 +411,7 @@ int main0(void){
  
 //********initialize communication channels
   OS_MailBox_Init(0);
-  OS_Fifo_Init(128);    // ***note*** 4 is not big enough*****
+  OS_Fifo_Init(128, 0);    // ***note*** 4 is not big enough*****
 
 //*******attach background tasks***********
   OS_AddSW1Task(&SW1Push,2);
@@ -1243,19 +1243,19 @@ int test_morethreads(void){  // testmain_monitor
   return 0;            // this never executes
 }
 
-short i=0;
+short iMM=0;
 void threadMM1(void){
 	while (1){
 		OS_Sleep(1000);
-		OS_MailBox_Send(i, i);
-		i=(i+1)%10;
+		OS_MailBox_Send(iMM, iMM);
+		iMM=(iMM+1)%10;
 	}
 }
 
 void threadMM2(void){
 	long item;
 	while (1){
-		item=OS_MailBox_Recv(i);
+		item=OS_MailBox_Recv(iMM);
 		UART_OutUDec(item);
 		UART_OutChar('.');
 	}
@@ -1287,6 +1287,77 @@ int testmain_multiMailbox(void){  // testmain_multiMailbox
   NumCreated += OS_AddThread(&threadMM1,128,1); 
   NumCreated += OS_AddThread(&threadMM2,128,1); 
   NumCreated += OS_AddThread(&threadMM3,128,1); 
+	
+  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+  return 0;            // this never executes
+}
+
+
+Sema4Type MFSema4;
+short iMF=0, iMF1=0;
+void threadMF1(void){
+	
+	while (1){
+		//OS_Sleep(500);
+		OS_Fifo_Put(iMF, iMF);
+		OS_Fifo_Put(iMF, iMF);
+		OS_Fifo_Put(iMF, iMF);
+		OS_Fifo_Put(iMF, iMF);
+		OS_Fifo_Put(iMF, iMF);
+		OS_Fifo_Put(iMF, iMF);
+		OS_Suspend();
+		OS_bWait(&MFSema4);
+		iMF=(iMF+1)%10;
+  	OS_bSignal(&MFSema4);
+	}
+}
+
+void threadMF2(void){
+	long item;
+	while (1){
+		item=OS_Fifo_Get(iMF);
+		UART_OutChar('0'+item);
+		item=OS_Fifo_Get(iMF);
+		UART_OutChar('0'+item);
+		item=OS_Fifo_Get(iMF);
+		UART_OutChar('0'+item);
+		item=OS_Fifo_Get(iMF);
+		UART_OutChar('0'+item);
+		item=OS_Fifo_Get(iMF);
+		UART_OutChar('0'+item);
+		item=OS_Fifo_Get(iMF);
+		UART_OutChar('0'+item);
+		OS_Suspend();
+	}
+}
+
+void threadMF3(void){
+	while (1){
+		//UART_OutChar('C');
+	}
+}
+
+int main(void){  // testmain_multiFIFO
+
+	short i;
+	
+  PLL_Init();
+	UART_Init();
+	
+	UART_OutChar('d');
+  OS_Init();           // initialize, disable interrupts
+  PortE_Init();       // profile user threads
+	
+	for (i=0;i<FIFONUM;i++){
+		OS_Fifo_Init(4, i);
+	}
+
+	OS_InitSemaphore(&MFSema4, 1);
+	
+  NumCreated = 0 ;
+  NumCreated += OS_AddThread(&threadMF1,128,1); 
+  NumCreated += OS_AddThread(&threadMF2,128,1); 
+  NumCreated += OS_AddThread(&threadMF3,128,1); 
 	
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
   return 0;            // this never executes

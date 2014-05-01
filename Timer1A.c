@@ -105,7 +105,7 @@ unsigned int count = 0;
 unsigned int timera_count = 0;
 void OS_AddPeriodicThread(void(*task)(void), 
    unsigned long period, unsigned long priority){
-	long sr;
+	//long sr;
 	period_threads[count]=period;
 	count++;
 	switch(count){

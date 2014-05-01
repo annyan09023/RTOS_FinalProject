@@ -289,52 +289,57 @@ void OS_MailBox_Init(short mailboxN){ // zw
 
 //Modified by annyan and Zirui
 //unsigned long fifo;
-#define FIFOSIZE 128
-long volatile *fifoPutPt;
-long volatile *fifoGetPt;
-long static Fifo[FIFOSIZE];
-struct Sema4 DataRoomLeft, mutex, DataAvailable;
 
-void OS_Fifo_Init(unsigned long size){
-	OS_InitSemaphore(&DataRoomLeft, FIFOSIZE);//size later
-	OS_InitSemaphore(&DataAvailable, 0);
-	OS_InitSemaphore(&mutex, 1);
-	fifoGetPt=fifoPutPt=&Fifo[0];
+long volatile *fifoPutPt[FIFONUM];
+long volatile *fifoGetPt[FIFONUM];
+long static Fifo[FIFONUM][FIFOSIZE];
+short FifoUserDefSize[FIFONUM];
+struct Sema4 DataRoomLeft[FIFONUM], mutex[FIFONUM], DataAvailable[FIFONUM];
+
+void OS_Fifo_Init(unsigned long size, short fifoN){
+	OS_InitSemaphore(&DataRoomLeft[fifoN], size);//size later
+	FifoUserDefSize[fifoN]=size;
+	OS_InitSemaphore(&DataAvailable[fifoN], 0);
+	OS_InitSemaphore(&mutex[fifoN], 1);
+	fifoGetPt[fifoN]=fifoPutPt[fifoN]=&Fifo[fifoN][0];
 }
 
-long OS_Fifo_Size(void){
-	return DataAvailable.Value;
+long OS_Fifo_Size(short fifoN){
+	return DataAvailable[fifoN].Value;
 }
-unsigned long OS_Fifo_Get(void){
+unsigned long OS_Fifo_Get(short fifoN){
 	unsigned long dataPt;
-	OS_Wait (&DataAvailable);
-	OS_bWait (&mutex);
-	dataPt=*fifoGetPt;
-	if (fifoGetPt==&Fifo[FIFOSIZE-1]) fifoGetPt=&Fifo[0]; //wrap
-	else fifoGetPt++;
-	OS_bSignal (&mutex);
-	OS_Signal (&DataRoomLeft);
+	OS_Wait (&DataAvailable[fifoN]);
+	OS_bWait (&mutex[fifoN]);
+	dataPt=*fifoGetPt[fifoN];
+	if (fifoGetPt[fifoN]==&Fifo[fifoN][FifoUserDefSize[fifoN]-1]) fifoGetPt[fifoN]=&Fifo[fifoN][0]; //wrap
+	else fifoGetPt[fifoN]++;
+	OS_bSignal (&mutex[fifoN]);
+	OS_Signal (&DataRoomLeft[fifoN]);
 	return dataPt;
 }
 
-int OS_Fifo_Put(unsigned long data){
+int OS_Fifo_Put(unsigned long data, short fifoN){
 	int flag = 0;//0 for failed, 1 for successful
 	volatile long *nextPt;
 	//UART_OutChar('f');
-	OS_Wait (&DataRoomLeft);
-	OS_bWait (&mutex);
+	OS_Wait (&DataRoomLeft[fifoN]);
+	OS_bWait (&mutex[fifoN]);
 	//UART_OutChar('U');
-	nextPt=++fifoPutPt;
-	if (nextPt==&Fifo[FIFOSIZE]) nextPt=&Fifo[0]; //wrap
-	*fifoPutPt=data;
-	fifoPutPt=nextPt;
+	*fifoPutPt[fifoN]=data;
+	nextPt=++fifoPutPt[fifoN];
+	if (nextPt==&Fifo[fifoN][FifoUserDefSize[fifoN]]) nextPt=&Fifo[fifoN][0]; //wrap
+	fifoPutPt[fifoN]=nextPt;
 	flag = 1;
-	OS_bSignal (&mutex);
-	OS_Signal (&DataAvailable);
+	OS_bSignal (&mutex[fifoN]);
+	OS_Signal (&DataAvailable[fifoN]);
 	return flag;
 }
 
 //end of modification
+
+
+
 // ******** OS_Kill ************
 // kill the currently running thread, release its TCB and stack
 // input:  none

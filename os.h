@@ -20,6 +20,9 @@
 
 #define MAILBOXNUM 10
 
+#define FIFONUM 10
+#define FIFOSIZE 4
+
 // feel free to change the type of semaphore, there are lots of good solutions
 struct  Sema4{
   long Value;   // >0 means free, otherwise means busy 
@@ -205,7 +208,7 @@ void OS_Suspend(void);
 // In Lab 3, you can put whatever restrictions you want on size
 //    e.g., 4 to 64 elements
 //    e.g., must be a power of 2,4,8,16,32,64,128
-void OS_Fifo_Init(unsigned long size);
+void OS_Fifo_Init(unsigned long size, short fifoN);
 
 // ******** OS_Fifo_Put ************
 // Enter one data sample into the Fifo
@@ -215,14 +218,14 @@ void OS_Fifo_Init(unsigned long size);
 //          false if data not saved, because it was full
 // Since this is called by interrupt handlers 
 //  this function can not disable or enable interrupts
-int OS_Fifo_Put(unsigned long data);  
+int OS_Fifo_Put(unsigned long data, short fifoN);  
 
 // ******** OS_Fifo_Get ************
 // Remove one data sample from the Fifo
 // Called in foreground, will spin/block if empty
 // Inputs:  none
 // Outputs: data 
-unsigned long OS_Fifo_Get(void);
+unsigned long OS_Fifo_Get(short fifoN);
 
 // ******** OS_Fifo_Size ************
 // Check the status of the Fifo
@@ -231,7 +234,7 @@ unsigned long OS_Fifo_Get(void);
 //          greater than zero if a call to OS_Fifo_Get will return right away
 //          zero or less than zero if the Fifo is empty 
 //          zero or less than zero if a call to OS_Fifo_Get will spin or block
-long OS_Fifo_Size(void);
+long OS_Fifo_Size(short fifoN);
 
 // ******** OS_MailBox_Init ************
 // Initialize communication channel

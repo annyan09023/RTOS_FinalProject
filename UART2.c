@@ -80,12 +80,12 @@ void EnableInterrupts(void);  // Enable interrupts
 long StartCritical (void);    // previous I bit, disable interrupts
 void EndCritical(long sr);    // restore I bit to previous value
 void WaitForInterrupt(void);  // low power mode
-#define FIFOSIZE   16         // size of the FIFOs (must be power of 2)
+#define UARTFIFOSIZE   16         // size of the FIFOs (must be power of 2)
 #define FIFOSUCCESS 1         // return value on success
 #define FIFOFAIL    0         // return value on failure
                               // create index implementation FIFO (see FIFO.h)
-AddIndexFifo(Rx, FIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
-AddIndexFifo(Tx, FIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
+AddIndexFifo(Rx, UARTFIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
+AddIndexFifo(Tx, UARTFIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
 
 
 //path expression
@@ -144,7 +144,7 @@ void UART_Close(void){
 // stop when hardware RX FIFO is empty or software RX FIFO is full
 void static copyHardwareToSoftware(void){
   char letter;
-  while(((UART0_FR_R&UART_FR_RXFE) == 0) && (RxFifo_Size() < (FIFOSIZE - 1))){
+  while(((UART0_FR_R&UART_FR_RXFE) == 0) && (RxFifo_Size() < (UARTFIFOSIZE - 1))){
     letter = UART0_DR_R;
     RxFifo_Put(letter);
   }
