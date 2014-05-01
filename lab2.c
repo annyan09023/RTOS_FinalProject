@@ -265,7 +265,7 @@ unsigned long myId = OS_Id();
 		//ST7735_Message (1, 6, "DCdata:", data);// for debugging, zw
     cr4_fft_64_stm32(y,x,64);  // complex FFT of last 64 ADC values
     DCcomponent = y[0]&0xFFFF; // Real part at frequency 0, imaginary part should be zero
-    OS_MailBox_Send(DCcomponent); // called every 2.5ms*64 = 160ms
+    OS_MailBox_Send(DCcomponent, 0); // called every 2.5ms*64 = 160ms
 		//ST7735_Message (1, 7, "DCcomp:", DCcomponent);// for debugging, zw
 		//OS_MailBox_Send(3091); // for debugging, zw
 		//UART_OutChar('t');
@@ -283,7 +283,7 @@ unsigned long data,voltage;
 	//UART_OutChar('s');
   while(NumSamples < RUNLENGTH) {
     //UART_OutChar('r');		
-    data = OS_MailBox_Recv();
+    data = OS_MailBox_Recv(0);
 		//ST7735_Message (1, 8, "Disdata:", data);
 		//UART_OutChar('1');
     voltage = 3000*data/4095;               // calibrate your device so voltage is in mV
@@ -410,7 +410,7 @@ int main0(void){
 
  
 //********initialize communication channels
-  OS_MailBox_Init();
+  OS_MailBox_Init(0);
   OS_Fifo_Init(128);    // ***note*** 4 is not big enough*****
 
 //*******attach background tasks***********
@@ -1112,7 +1112,7 @@ void threadKF2(void){
 	}
 }
 
-int main(void){  // testmain_killForeground
+int testmain_killForeground(void){  // testmain_killForeground
   PLL_Init();
 	UART_Init();
 	
@@ -1181,9 +1181,6 @@ void threadM3(void){
 	}
 }
 
-
-
-
 int testmain_monitor(void){  // testmain_monitor
 
   PLL_Init();
@@ -1204,6 +1201,9 @@ int testmain_monitor(void){  // testmain_monitor
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
   return 0;            // this never executes
 }
+
+
+
 int test_20threads_count = 0;
 void test_20threads(){
 	UART_OutUDec(test_20threads_count++);
@@ -1242,3 +1242,53 @@ int test_morethreads(void){  // testmain_monitor
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
   return 0;            // this never executes
 }
+
+short i=0;
+void threadMM1(void){
+	while (1){
+		OS_Sleep(1000);
+		OS_MailBox_Send(i, i);
+		i=(i+1)%10;
+	}
+}
+
+void threadMM2(void){
+	long item;
+	while (1){
+		item=OS_MailBox_Recv(i);
+		UART_OutUDec(item);
+		UART_OutChar('.');
+	}
+}
+
+void threadMM3(void){
+	while (1){
+		//UART_OutChar('C');
+	}
+}
+
+int testmain_multiMailbox(void){  // testmain_multiMailbox
+
+	short i;
+	
+  PLL_Init();
+	UART_Init();
+	
+	UART_OutChar('d');
+  OS_Init();           // initialize, disable interrupts
+  PortE_Init();       // profile user threads
+	
+	for (i=0;i<MAILBOXNUM;i++){
+		OS_MailBox_Init(i);
+	}
+
+	
+  NumCreated = 0 ;
+  NumCreated += OS_AddThread(&threadMM1,128,1); 
+  NumCreated += OS_AddThread(&threadMM2,128,1); 
+  NumCreated += OS_AddThread(&threadMM3,128,1); 
+	
+  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+  return 0;            // this never executes
+}
+

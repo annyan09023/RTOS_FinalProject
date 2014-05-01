@@ -18,6 +18,8 @@
 #define TIME_500US  (TIME_1MS/2)  
 #define TIME_250US  (TIME_1MS/5)  
 
+#define MAILBOXNUM 10
+
 // feel free to change the type of semaphore, there are lots of good solutions
 struct  Sema4{
   long Value;   // >0 means free, otherwise means busy 
@@ -235,7 +237,7 @@ long OS_Fifo_Size(void);
 // Initialize communication channel
 // Inputs:  none
 // Outputs: none
-void OS_MailBox_Init(void);
+void OS_MailBox_Init(short mailboxN);
 
 // ******** OS_MailBox_Send ************
 // enter mail into the MailBox
@@ -243,7 +245,7 @@ void OS_MailBox_Init(void);
 // Outputs: none
 // This function will be called from a foreground thread
 // It will spin/block if the MailBox contains data not yet received 
-void OS_MailBox_Send(unsigned long data);
+void OS_MailBox_Send(unsigned long data, short mailboxN);
 
 // ******** OS_MailBox_Recv ************
 // remove mail from the MailBox
@@ -251,7 +253,7 @@ void OS_MailBox_Send(unsigned long data);
 // Outputs: data received
 // This function will be called from a foreground thread
 // It will spin/block if the MailBox is empty 
-unsigned long OS_MailBox_Recv(void);
+unsigned long OS_MailBox_Recv(short mailboxN);
 
 // ******** OS_Time ************
 // return the system time 

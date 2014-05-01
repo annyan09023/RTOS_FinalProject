@@ -250,20 +250,21 @@ long jitterHistogram(long jitter, char jitterNum){
 /********************************End of Modification*************************************/
 
 
-//Modified by annyan
-struct Sema4 BoxFree, DataValid;
-unsigned long static MailBox; // zw
-unsigned long OS_MailBox_Recv(void){
+//Modified by zw and annyan
+
+struct Sema4 BoxFree[MAILBOXNUM], DataValid[MAILBOXNUM]; // zw
+unsigned long static MailBox[MAILBOXNUM]; // zw
+unsigned long OS_MailBox_Recv(short mailboxN){ // zw
 	static unsigned long data=0;
-	OS_bWait (&DataValid);
-	data = MailBox;
-	OS_bSignal (&BoxFree);
+	OS_bWait(&DataValid[mailboxN]);
+	data = MailBox[mailboxN];
+	OS_bSignal (&BoxFree[mailboxN]);
 	return data;
 }
-void OS_MailBox_Send(unsigned long data){
-	OS_bWait (&BoxFree);
-	MailBox = data;
-	OS_bSignal (&DataValid);
+void OS_MailBox_Send(unsigned long data, short mailboxN){ // zw
+	OS_bWait(&BoxFree[mailboxN]);
+	MailBox[mailboxN] = data;
+	OS_bSignal (&DataValid[mailboxN]);
 	return;
 }
 //end of modification
@@ -276,13 +277,16 @@ void OS_MailBox_Send(unsigned long data){
 /*Initialize bsema4 DataValid, 1 stands for there is data
  *Boxfree, 1 stands for mailbox is free
  */
-void OS_MailBox_Init(void){
-	
-	OS_InitSemaphore(&BoxFree, 1);//Initially BoxFree is 1 stands for an empty mailbox, 
-	                              //Data Valid is 0 stands for no data
-	OS_InitSemaphore(&DataValid, 0);
+void OS_MailBox_Init(short mailboxN){ // zw
+		OS_InitSemaphore(&BoxFree[mailboxN], 1);//Initially BoxFree is 1 stands for an empty mailbox, 
+																	//Data Valid is 0 stands for no data
+		OS_InitSemaphore(&DataValid[mailboxN], 0);
 }
 //end of modification
+
+
+
+
 //Modified by annyan and Zirui
 //unsigned long fifo;
 #define FIFOSIZE 128
