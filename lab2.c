@@ -961,7 +961,7 @@ void annyan2 (){
 	//OutCRLF();
 }
 
-int Testbank(){
+int bankmain(){
 	int dead_lock;
 	Sema4Type s0; 
 	Sema4Type s1; 
@@ -1120,8 +1120,8 @@ int testmain_killForeground(void){  // testmain_killForeground
   OS_Init();           // initialize, disable interrupts
   PortE_Init();       // profile user threads
   NumCreated = 0 ;
-  NumCreated += OS_AddThread(&threadKF2,128,1); 
   NumCreated += OS_AddThread(&threadKF1,128,1); 
+  NumCreated += OS_AddThread(&threadKF2,128,1); 
  
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
   return 0;            // this never executes
@@ -1211,7 +1211,7 @@ void test_20threads(){
 	while (1);
 }
 
-int test_morethreads(void){  // testmain_monitor
+int testmain_20threads(void){  // testmain_20threads
   PLL_Init();
 	UART_Init();
 	
@@ -1267,7 +1267,7 @@ void threadMM3(void){
 	}
 }
 
-int testmain_multiMailbox(void){  // testmain_multiMailbox
+int main (void){  // testmain_multiMailbox
 
 	short i;
 	
@@ -1337,7 +1337,7 @@ void threadMF3(void){
 	}
 }
 
-int main(void){  // testmain_multiFIFO
+int testmain_multiFIFO(void){  // testmain_multiFIFO
 
 	short i;
 	
