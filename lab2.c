@@ -262,12 +262,12 @@ unsigned long myId = OS_Id();
 			UART_OutChar(data%10+'0');*/
     }
     PE2 = 0x00;
-		//ST7735_Message (1, 6, "DCdata:", data);// for debugging, zw
+		//ST7735_Message (1, 6, "DCdata:", data);// for debugging, Zirui
     cr4_fft_64_stm32(y,x,64);  // complex FFT of last 64 ADC values
     DCcomponent = y[0]&0xFFFF; // Real part at frequency 0, imaginary part should be zero
     OS_MailBox_Send(DCcomponent, 0); // called every 2.5ms*64 = 160ms
-		//ST7735_Message (1, 7, "DCcomp:", DCcomponent);// for debugging, zw
-		//OS_MailBox_Send(3091); // for debugging, zw
+		//ST7735_Message (1, 7, "DCcomp:", DCcomponent);// for debugging, Zirui
+		//OS_MailBox_Send(3091); // for debugging, Zirui
 		//UART_OutChar('t');
   }
   OS_Kill();  // done
@@ -378,7 +378,7 @@ void Interpreter(void){
 
 
 
-//modification starts, for testing DAS, zw
+//modification starts, for testing DAS, Zirui
 void Thread1ZW(void){       
   for(;;){
     PE1 ^= 0x02;       // heartbeat
@@ -391,7 +391,7 @@ void Thread2ZW(void){
 		UART_OutChar('c');
   }
 }
-//modification ends, for testing DAS, zw
+//modification ends, for testing DAS, Zirui
 
 //*******************final user main DEMONTRATE THIS TO TA**********
 int main0(void){
@@ -717,8 +717,8 @@ void Thread6(void){  // foreground thread
     PE0 ^= 0x01;        // debugging toggle bit 0  
   }
 }
-extern void Jitter(void){ // prints jitter information (write this), not Implemented annyan
-	
+extern void Jitter(void){ 
+	//modified by Zirui
 	UART_OutString("MaxJitter1:");
 	UART_OutUDec(maxJitter(1));
 	//OutCRLF();
@@ -748,29 +748,29 @@ unsigned long jitterCount2=0;
 #define counts1us 10    // number of OS_Time counts per 1us
 void TaskA(void){       // called every {1000, 2990us} in background
   PE1 = 0x02;      // debugging profile
-	jitterSetThisTime(1);//zw
+	jitterSetThisTime(1);//Zirui
 	if (jitterCount1>0){
 		jitterCount1++;
 		jitterCalc(1,PERIODA);
-		//UART_OutUDec(jitterCalc(1,PERIODA));//zw
+		//UART_OutUDec(jitterCalc(1,PERIODA));//Zirui
 	}
   CountA++;
   PseudoWork(workA*counts1us); //  do work (100ns time resolution)
-	jitterSetLastTime(1);//zw
+	jitterSetLastTime(1);//Zirui
   PE1 = 0x00;      // debugging profile  
 }
 #define workB 250       // 250 us work in Task B
 void TaskB(void){       // called every pB in background
   PE2 = 0x04;      // debugging profile  
-	jitterSetThisTime(2);//zw
+	jitterSetThisTime(2);//Zirui
 	if (jitterCount2>0){
 		jitterCount2++;
 		jitterCalc(2,PERIODA);
-		//UART_OutUDec(jitterCalc(2,PERIODA));//zw
+		//UART_OutUDec(jitterCalc(2,PERIODA));//Zirui
   }
 	CountB++;
   PseudoWork(workB*counts1us); //  do work (100ns time resolution)
-	jitterSetLastTime(2);//zw
+	jitterSetLastTime(2);//Zirui
   PE2 = 0x00;      // debugging profile  
 }
 

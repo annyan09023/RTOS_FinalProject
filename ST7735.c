@@ -96,7 +96,8 @@
 #define SYSCTL_RCGC1_SSI0       0x00000010  // SSI0 Clock Gating Control
 #define SYSCTL_RCGC2_GPIOA      0x00000001  // port A Clock Gating Control
 
-//path expression
+//path expression 
+//modified by Zirui
 int lcd_state=3;
 int lcd_path[4][4]={    /* init writecommand writedata close */
 /*  column                   0       1          2        3 */
@@ -405,6 +406,8 @@ static short _height = ST7735_TFTHEIGHT;
 // NOTE: These functions will crash or stall indefinitely if
 // the SSI0 module is not initialized and enabled.
 void static writecommand(unsigned char c) {
+	
+	//modified by Zirui
   if (lcd_path[lcd_state][1]==0) OS_Kill(); // refuse to execute
   lcd_state=1;
 
@@ -419,6 +422,8 @@ void static writecommand(unsigned char c) {
 
 
 void static writedata(unsigned char c) {
+	
+	//modified by Zirui
   if (lcd_path[lcd_state][2]==0) OS_Kill(); // refuse to execute
   lcd_state=2;
 
@@ -1101,6 +1106,10 @@ void ST7735_InvertDisplay(int i) {
 //Modified by Annyan and Zirui
 #define FONT_SIZE 1
 //End of modification
+
+
+
+////modified by Zirui
 void ST7735_Message (int device, int line, char *string, unsigned long value){
 	short begin_x = 0;
   short begin_y = ((device * 10 + line) * FONT_SIZE)*8;
@@ -1148,4 +1157,5 @@ void ST7735_Message (int device, int line, char *string, unsigned long value){
 	OS_bSignal (&LCDdisplay);
 	
 }
+//end of modification by Zirui
 

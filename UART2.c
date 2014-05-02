@@ -88,7 +88,7 @@ AddIndexFifo(Rx, UARTFIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
 AddIndexFifo(Tx, UARTFIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
 
 
-//path expression
+//path expression modified by Zirui
 int uart_state=3;
 int uart_path[4][4]={   /* init inchar outchar close */
 /*  column             0     1      2      3 */
@@ -101,6 +101,7 @@ int uart_path[4][4]={   /* init inchar outchar close */
 // Initialize UART0
 // Baud rate is 115200 bits/sec
 void UART_Init(void){
+	//modified by Zirui
   if (uart_path[uart_state][0]==0) OS_Kill(); // refuse to execute
   uart_state=0;
   
@@ -131,7 +132,7 @@ void UART_Init(void){
   EnableInterrupts();
 }
 
-
+//modified by Zirui
 void UART_Close(void){
   if (uart_path[uart_state][3]==0) OS_Kill(); // refuse to execute
   uart_state=3;
@@ -162,6 +163,7 @@ void static copySoftwareToHardware(void){
 // spin if RxFifo is empty
 unsigned char UART_InChar(void){
   char letter;
+	//modified by Zirui
   if (uart_path[uart_state][1]==0) OS_Kill(); // refuse to execute
   uart_state=1;
   
@@ -172,6 +174,7 @@ unsigned char UART_InChar(void){
 // output ASCII character to UART
 // spin if TxFifo is full
 void UART_OutChar(unsigned char data){
+	//modified by Zirui
   if (uart_path[uart_state][2]==0) OS_Kill(); // refuse to execute
   uart_state=2;
 

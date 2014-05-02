@@ -164,10 +164,15 @@ int OS_AddThread (void(*task)(void), unsigned long stackSize, unsigned long prio
 	//End of modification
 	
 	
-	//by zw for auto-kill finished foreground threads
+	//Kill foreground threads by Zirui 
+	//also modified the osasm, section startos	
+	//for auto-kill finished foreground threads
 	Stack[thread_num][STACKSIZE-3]=(long) OS_Kill;
 	//if a foreground thread finsh without OS_Kill, 
 	//then forces LR bringing the thread to run OS_Kill
+	
+	
+	
 	
 	
 	
@@ -247,27 +252,26 @@ long jitterHistogram(long jitter, char jitterNum){
 	else return JitterHistogram[jitterNum][JITTERSIZE-1];
 }
 
-/********************************End of Modification*************************************/
+/********************************End of Modification by Zirui*************************************/
 
 
-//Modified by zw and annyan
-
-struct Sema4 BoxFree[MAILBOXNUM], DataValid[MAILBOXNUM]; // zw
-unsigned long static MailBox[MAILBOXNUM]; // zw
-unsigned long OS_MailBox_Recv(short mailboxN){ // zw
+//multiMaibox by Zirui
+struct Sema4 BoxFree[MAILBOXNUM], DataValid[MAILBOXNUM]; // Zirui
+unsigned long static MailBox[MAILBOXNUM]; // Zirui
+unsigned long OS_MailBox_Recv(short mailboxN){ // Zirui
 	static unsigned long data=0;
 	OS_bWait(&DataValid[mailboxN]);
 	data = MailBox[mailboxN];
 	OS_bSignal (&BoxFree[mailboxN]);
 	return data;
 }
-void OS_MailBox_Send(unsigned long data, short mailboxN){ // zw
+void OS_MailBox_Send(unsigned long data, short mailboxN){ // Zirui
 	OS_bWait(&BoxFree[mailboxN]);
 	MailBox[mailboxN] = data;
 	OS_bSignal (&DataValid[mailboxN]);
 	return;
 }
-//end of modification
+
 
 // ******** OS_MailBox_Init ************
 // Initialize communication channel
@@ -277,7 +281,7 @@ void OS_MailBox_Send(unsigned long data, short mailboxN){ // zw
 /*Initialize bsema4 DataValid, 1 stands for there is data
  *Boxfree, 1 stands for mailbox is free
  */
-void OS_MailBox_Init(short mailboxN){ // zw
+void OS_MailBox_Init(short mailboxN){ // Zirui
 		OS_InitSemaphore(&BoxFree[mailboxN], 1);//Initially BoxFree is 1 stands for an empty mailbox, 
 																	//Data Valid is 0 stands for no data
 		OS_InitSemaphore(&DataValid[mailboxN], 0);
@@ -287,8 +291,7 @@ void OS_MailBox_Init(short mailboxN){ // zw
 
 
 
-//Modified by annyan and Zirui
-//unsigned long fifo;
+//MultiFIFO by Zirui
 
 long volatile *fifoPutPt[FIFONUM];
 long volatile *fifoGetPt[FIFONUM];
@@ -336,7 +339,7 @@ int OS_Fifo_Put(unsigned long data, short fifoN){
 	return flag;
 }
 
-//end of modification
+//end of modification by Zirui
 
 
 
@@ -788,7 +791,7 @@ void SysTick_Handler (void){
 
 
 
-//monitor
+//monitor by Zirui
 void CondVar_Wait(Sema4Type *lockPt, MonitorType *CondVarPt){
 	//move thread to waiting queue and suspend thread
 	
@@ -850,6 +853,7 @@ int Monitor_Get(Sema4Type *lockPt, MonitorType *CondVarPt) {
 	return item;
 }
 
+//lock is sema4 type, but just used as a simple lock
 void Monitor_Put(Sema4Type *lockPt, MonitorType *CondVarPt, int item){
 	OS_bWait(lockPt); 
 	
@@ -865,3 +869,5 @@ void Monitor_Put(Sema4Type *lockPt, MonitorType *CondVarPt, int item){
 void OS_InitMonitor(MonitorType *CondVarPt){
 	CondVarPt->mStackSize=0;
 }
+// end of monitor by Zirui
+

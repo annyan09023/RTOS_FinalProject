@@ -282,6 +282,8 @@ void ADC0_InitTimer0ATriggerSeq3(unsigned char channelNum, unsigned char prescal
 volatile unsigned long ADCvalue;
 
 //Modified by Annyan and Zirui
+
+//modified by Zirui
 int ADC_Open(unsigned char channelNum){
 	ADC0_InitTimer0ATriggerSeq3(channelNum, 76, 6492);//sample at 100HZ
 	return 0;
@@ -326,6 +328,7 @@ void (*ADC_task)(unsigned long);
 unsigned int global_channel;
 unsigned int global_fs;
 
+//modified by Zirui
 void ADC_Collect(unsigned int channelNum, unsigned int fs, void (*task)(unsigned long)){
 	//int count;
 		int prescale = 49, period; // 80MHz=(prescale+1)/(period+1)
@@ -340,12 +343,14 @@ void ADC_Collect(unsigned int channelNum, unsigned int fs, void (*task)(unsigned
 	  global_fs = fs;
 	  ADC0_InitTimer0ATriggerSeq3(channelNum, prescale, period);
 }
-	
+
+//modified by Zirui	
 int ADC_Status(void){
 	if (ADC_Collect_Complete == 0)	return 1;
 	else return 0;
 }
 
+//modified by Zirui
 void ADC0Seq3_Handler(void){
   ADC0_ISC_R = ADC_ISC_IN3;                 // acknowledge ADC sequence 3 completion
 	

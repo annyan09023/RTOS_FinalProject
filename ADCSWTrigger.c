@@ -176,6 +176,7 @@ void ADC_Init(unsigned char channelNum){ volatile unsigned long delay;
 // Busy-wait Analog to digital conversion
 // Input: none
 // Output: 12-bit result of ADC conversion
+//modified by Zirui
 unsigned long ADC_In(void){  unsigned long result;
   ADC1_PSSI_R = 0x0008;            // 1) initiate SS3
   while((ADC1_RIS_R&0x08)==0){};   // 2) wait for conversion done

@@ -136,6 +136,7 @@ PendSV_Handler                 ; 1) Saves R0-R3,R12,LR,PC,PSR
 	;STR R11, [R10]
 	;end of modification
 	
+	;modified by Zirui
     LDR     R0, =RunPt         ; 4) R0=pointer to RunPt, old thread
     LDR     R1, [R0]           ;    R1 = RunPt
     STR     SP, [R1]           ; 5) Save SP into TCB
@@ -158,7 +159,7 @@ PendSV_Handler                 ; 1) Saves R0-R3,R12,LR,PC,PSR
 StartOS
 	
 	BL  GPIO_Init              ;Modified by Zirui
-	
+	;modified by Zirui for kill foreground thread
     LDR     R0, =RunPt         ; currently running thread
     LDR     R2, [R0]           ; R2 = value of RunPt
     LDR     SP, [R2]           ; new thread SP; SP = RunPt->stackPointer;
